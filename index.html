@@ -189,6 +189,18 @@ textarea{resize:vertical}
 .result div{min-width:0;font-size:13px}
 .sheet-foot{display:flex;gap:8px;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:var(--surface);padding-top:6px}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;box-shadow:var(--shadow)}
+/* photos */
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin-top:10px}
+.photos .ph{border:0;padding:0;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--line)}
+.photos .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph-edit{display:flex;flex-wrap:wrap;gap:8px}
+.ph-item,.ph-add{position:relative;width:76px;height:76px;border-radius:12px}
+.ph-item img{width:100%;height:100%;object-fit:cover;border-radius:12px;display:block}
+.ph-item .x{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:11px;padding:0}
+.ph-add{display:grid;place-items:center;border:1.5px dashed var(--line);color:var(--muted);font-size:26px;cursor:pointer}
+#viewer{background:transparent;box-shadow:none;max-width:100%;width:auto;max-height:100vh;margin:auto;border-radius:0}
+#viewer img{max-width:94vw;max-height:88vh;border-radius:14px;display:block}
+.genre-hint{font-size:12px;color:var(--muted)}
 .settings{display:flex;flex-direction:column;gap:12px}
 .settings .panel p{margin:4px 0 10px}
 @media (prefers-reduced-motion:no-preference){.medal:not(.locked) .coin{transition:transform .25s}.medal:not(.locked):hover .coin{transform:rotate(-8deg) scale(1.04)}}
@@ -206,6 +218,7 @@ textarea{resize:vertical}
   <button class="tab" data-tab="milestones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="6"/><circle cx="12" cy="10" r="2.6"/><path d="M8.5 15 7 21l5-2.5 5 2.5-1.5-6"/></svg>里程碑</button>
   <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>設定</button>
 </div></nav>
+<dialog id="viewer" aria-label="照片"><img alt=""></dialog>
 <dialog id="sheet"><form id="form" class="sheet" novalidate></form></dialog>
 
 <script>
@@ -232,7 +245,62 @@ const KEY='melody-diary-v1';
 let db={entries:[],books:[]};
 try{const raw=localStorage.getItem(KEY);if(raw)db=Object.assign(db,JSON.parse(raw))}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('無法儲存：瀏覽器封鎖了本機儲存空間')}};
-const ui={tab:'diary',bookId:null,filter:'reading',cal:today().slice(0,7),year:new Date().getFullYear()};
+
+/* ---------- photos (IndexedDB; localStorage only keeps the ids) ---------- */
+const PH=new Map();
+const isImg=d=>typeof d==='string'&&/^data:image\/(jpeg|png|webp|gif);base64,/.test(d);
+const idb=new Promise((res,rej)=>{try{const r=indexedDB.open('melody-diary',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+idb.catch(()=>{});
+const store=(mode,fn)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction('photos',mode);fn(t.objectStore('photos'));t.oncomplete=res;t.onerror=()=>rej(t.error)}));
+const loadPhotos=()=>idb.then(d=>new Promise(res=>{const q=d.transaction('photos').objectStore('photos').openCursor();q.onsuccess=()=>{const c=q.result;if(!c)return res();if(isImg(c.value))PH.set(c.key,c.value);c.continue()};q.onerror=()=>res()})).catch(()=>{});
+const putPhotos=ids=>store('readwrite',s=>ids.forEach(i=>PH.has(i)&&s.put(PH.get(i),i))).catch(()=>toast('照片儲存失敗，空間可能不足'));
+const delPhotos=ids=>{ids.forEach(i=>PH.delete(i));return store('readwrite',s=>ids.forEach(i=>s.delete(i))).catch(()=>{})};
+function shrink(file,max=1280,q=.8){
+  return new Promise((res,rej)=>{const u=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};
+    img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u});
+}
+const photoGrid=ids=>{ids=(ids||[]).filter(i=>PH.has(i));return ids.length?`<div class="photos">${ids.map(i=>`<button type="button" class="ph" data-view="${esc(i)}"><img src="${esc(PH.get(i))}" alt="照片" loading="lazy"></button>`).join('')}</div>`:''};
+
+/* ---------- genres (auto-classified, can be overridden) ---------- */
+// Order matters: specific genres first so "Juvenile Fiction / Mystery" lands in 推理 rather than 小說.
+const GENRES=[
+  ['漫畫繪本','#e0803a',['漫畫','繪本','comic','manga','graphic novel','picture book']],
+  ['推理懸疑','#45618f',['推理','懸疑','偵探','謀殺','殺人','犯罪','密室','mystery','thriller','crime','detective','suspense']],
+  ['奇幻科幻','#7a6c9c',['奇幻','科幻','魔法','fantasy','science fiction','sci-fi','dystopia']],
+  ['愛情','#d6336c',['愛情','戀','romance','love story']],
+  ['傳記回憶','#a3803a',['傳記','自傳','回憶錄','biography','memoir','autobiography']],
+  ['散文詩集','#9c5a7a',['散文','隨筆','詩','札記','poetry','poems','essays']],
+  ['語言學習','#3f7d8c',['英文','日文','韓文','單字','文法','多益','雅思','托福','language arts','foreign language','toeic','ielts']],
+  ['電腦科技','#4a6fa5',['程式','軟體','人工智慧','演算法','數位','computers','programming','technology','python','javascript']],
+  ['商業理財','#5b7f4f',['商業','理財','投資','經濟','管理','行銷','創業','財富','股票','職場','領導','business','economics','finance','investing','marketing','management']],
+  ['心理勵志','#c9962b',['心理','勵志','習慣','勇氣','自我','成長','焦慮','情緒','療癒','幸福','正念','self-help','psychology','happiness','habits']],
+  ['哲學思考','#6d6a7c',['哲學','思考','倫理','存在','philosophy','ethics']],
+  ['人文歷史','#b5654f',['歷史','文明','帝國','戰爭','history','civilization']],
+  ['社會科學','#5e8c8a',['社會','政治','性別','教育','法律','新聞','social science','political','education','law']],
+  ['自然科普','#2f9e4f',['科學','宇宙','物理','生物','演化','數學','大腦','基因','自然','動物','science','physics','biology','mathematics','nature','evolution']],
+  ['藝術設計','#ea5f84',['藝術','設計','攝影','音樂','電影','建築','art','design','photography','music','architecture']],
+  ['生活風格','#7fa04f',['料理','食譜','旅行','旅遊','健康','運動','收納','家居','園藝','寵物','育兒','cooking','travel','health','fitness','gardening','parenting']],
+  ['文學小說','#8a5a9c',['小說','文學','物語','fiction','novel','literary','literature']],
+].map(([k,c,kw])=>({k,c,re:new RegExp(kw.map(w=>/^[\x00-\x7f]+$/.test(w)?`\\b${w}\\b`:w).join('|'),'i')}));
+const OTHER={k:'其他',c:'#8a7fa8'};
+const AUTHOR_GENRE={'東野圭吾':'推理懸疑','宮部美幸':'推理懸疑','湊佳苗':'推理懸疑','阿嘉莎':'推理懸疑','克莉絲蒂':'推理懸疑','Agatha Christie':'推理懸疑','柯南・道爾':'推理懸疑','島田莊司':'推理懸疑','京極夏彥':'推理懸疑',
+  '劉慈欣':'奇幻科幻','羅琳':'奇幻科幻','Rowling':'奇幻科幻','托爾金':'奇幻科幻','Tolkien':'奇幻科幻','艾西莫夫':'奇幻科幻','上橋菜穗子':'奇幻科幻',
+  '村上春樹':'文學小說','太宰治':'文學小說','夏目漱石':'文學小說','川端康成':'文學小說','馬奎斯':'文學小說','卡繆':'文學小說','張愛玲':'文學小說','聖修伯里':'文學小說','吉本芭娜娜':'文學小說','是枝裕和':'文學小說','韓江':'文學小說',
+  '哈拉瑞':'人文歷史','Harari':'人文歷史','岸見一郎':'心理勵志','詹姆斯・克利爾':'心理勵志','James Clear':'心理勵志',
+  '三毛':'散文詩集','余光中':'散文詩集','席慕蓉':'散文詩集','蔣勳':'藝術設計','幾米':'漫畫繪本','尾田榮一郎':'漫畫繪本'};
+// hint = Google Books categories + description saved when the book was picked from search
+function classify(b){
+  const author=String(b.author||'');
+  for(const[a,g]of Object.entries(AUTHOR_GENRE))if(author.includes(a))return g;
+  const [cats='',desc='']=String(b.hint||'').split('\n');
+  for(const text of[`${b.title||''} ${cats}`,desc]){const g=GENRES.find(g=>g.re.test(text));if(g)return g.k}
+  return OTHER.k;
+}
+const genreOf=b=>b.genre||classify(b);
+const genreColor=k=>(GENRES.find(g=>g.k===k)||OTHER).c;
+
+const ui={tab:'diary',bookId:null,filter:'reading',genre:'',cal:today().slice(0,7),year:new Date().getFullYear()};
 
 /* ---------- song links ---------- */
 function parseSong(raw){
@@ -319,6 +387,7 @@ function viewDiary(){
       <div class="entry-head"><span class="emo" aria-hidden="true">${m.e}</span><div class="d"><div class="entry-date">${fmtDate(e.date)} ${dow(e.date)}</div><div class="small muted">${m.l}</div></div>
       <button class="icon-btn" data-edit-entry="${e.id}" aria-label="編輯">✎</button></div>
       ${e.text?`<p class="entry-text">${esc(e.text)}</p>`:''}
+      ${photoGrid(e.photos)}
       ${e.songs?.length?`<div class="songs">${e.songs.map(s=>songCard(s)).join('')}</div>`:''}
     </article>`;
   }
@@ -330,7 +399,9 @@ document.addEventListener('click',e=>{
   else if(t.closest('[data-day]')){const ds=t.closest('[data-day]').dataset.day;const ex=[...db.entries].reverse().find(x=>x.date===ds);editEntry(ex?.id,ds)}
   else if(t.closest('[data-new-entry]'))editEntry();
   else if(t.closest('[data-edit-entry]'))editEntry(t.closest('[data-edit-entry]').dataset.editEntry);
-  else if(t.closest('[data-filter]')){ui.filter=t.closest('[data-filter]').dataset.filter;render()}
+  else if(t.closest('[data-filter]')){ui.filter=t.closest('[data-filter]').dataset.filter;ui.genre='';render()}
+  else if(t.closest('[data-genre]')){ui.genre=t.closest('[data-genre]').dataset.genre;render()}
+  else if(t.closest('[data-view]')){const v=$('#viewer');$('img',v).src=PH.get(t.closest('[data-view]').dataset.view)||'';v.showModal()}
   else if(t.closest('[data-book]'))go('books',t.closest('[data-book]').dataset.book);
   else if(t.closest('[data-year]')){ui.year=+t.closest('[data-year]').dataset.year;render()}
 });
@@ -340,16 +411,20 @@ const COVERS=['#7a6c9c','#3f7d8c','#b5654f','#5b7f4f','#9c5a7a','#45618f','#a380
 const coverColor=s=>COVERS[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%COVERS.length];
 const stars=n=>n?'★'.repeat(n)+'☆'.repeat(5-n):'';
 function coverHtml(b,badge=true){
-  const n=(b.songs||[]).length;
-  return `<div class="cover" style="--cv:${coverColor(b.title)}">${b.cover?`<img src="${esc(safeUrl(b.cover))}" alt="" loading="lazy" onerror="this.remove()">`:''}${b.cover?'':`<div class="ph">${esc(b.title)}</div>`}${badge&&n?`<span class="notes">♪ ${n}</span>`:''}</div>`;
+  const n=(b.songs||[]).length,src=b.cover?safeUrl(b.cover):(b.photos||[]).map(i=>PH.get(i)).find(Boolean);
+  return `<div class="cover" style="--cv:${coverColor(b.title)}">${src?`<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`:`<div class="ph">${esc(b.title)}</div>`}${badge&&n?`<span class="notes">♪ ${n}</span>`:''}</div>`;
 }
 function viewShelf(){
   const counts={reading:0,finished:0,want:0};db.books.forEach(b=>counts[b.status]++);
   const seg=Object.entries({reading:'在讀',finished:'讀完',want:'想讀',all:'全部'}).map(([k,l])=>`<button data-filter="${k}" aria-pressed="${ui.filter===k}">${l} ${k==='all'?db.books.length:counts[k]}</button>`).join('');
-  const list=db.books.filter(b=>ui.filter==='all'||b.status===ui.filter).sort((a,b)=>(b.finish||b.start||'').localeCompare(a.finish||a.start||''));
+  const byStatus=db.books.filter(b=>ui.filter==='all'||b.status===ui.filter);
+  const gc={};byStatus.forEach(b=>{const g=genreOf(b);gc[g]=(gc[g]||0)+1});
+  if(ui.genre&&!gc[ui.genre])ui.genre='';
+  const chips=Object.keys(gc).length>1?`<div class="seg" role="group" aria-label="類別" style="margin-top:8px"><button data-genre="" aria-pressed="${!ui.genre}">所有類別</button>${Object.entries(gc).sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<button data-genre="${esc(g)}" aria-pressed="${ui.genre===g}">${esc(g)} ${n}</button>`).join('')}</div>`:'';
+  const list=byStatus.filter(b=>!ui.genre||genreOf(b)===ui.genre).sort((a,b)=>(b.finish||b.start||'').localeCompare(a.finish||a.start||''));
   const shelf=list.length?`<div class="shelf">${list.map(b=>`<button class="book" data-book="${b.id}">${coverHtml(b)}<div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>${b.rating?`<div class="stars">${stars(b.rating)}</div>`:''}</button>`).join('')}</div>`
     :`<div class="empty"><b>這一格還是空的</b>按 ＋ 加一本書，替它選幾首歌當配樂。</div>`;
-  return `<div class="seg" role="group" aria-label="篩選">${seg}</div>${shelf}`;
+  return `<div class="seg" role="group" aria-label="篩選">${seg}</div>${chips}${shelf}`;
 }
 function viewBook(id){
   const b=db.books.find(x=>x.id===id);
@@ -358,12 +433,13 @@ function viewBook(id){
   const quotes=(b.quotes||'').split('\n').map(q=>q.trim()).filter(Boolean);
   return `<button class="back" onclick="go('books')">‹ 書櫃</button>
   <div class="bd-hero">${coverHtml(b,false)}<div><h2>${esc(b.title)}</h2><div class="muted">${esc(b.author)}</div>
-    <div class="bd-meta"><span class="pill ${b.status}">${STATUS[b.status]}</span>${b.pages?`<span class="pill">${num(b.pages)} 頁</span>`:''}${dates?`<span class="pill">${dates}</span>`:''}</div>
+    <div class="bd-meta"><span class="pill ${b.status}">${STATUS[b.status]}</span><span class="pill" style="border-color:${genreColor(genreOf(b))};color:${genreColor(genreOf(b))}">${esc(genreOf(b))}</span>${b.pages?`<span class="pill">${num(b.pages)} 頁</span>`:''}${dates?`<span class="pill">${dates}</span>`:''}</div>
     ${b.rating?`<div class="stars" style="font-size:18px;margin-top:6px">${stars(b.rating)}</div>`:''}</div></div>
   <h2 class="sec">這本書的配樂 <span class="muted small">${(b.songs||[]).length} 首</span></h2>
   ${b.songs?.length?`<div class="songs">${b.songs.map(s=>songCard(s,true)).join('')}</div>`:`<div class="panel muted">還沒有配樂。哪首歌最像這本書的感覺？</div>`}
   <h2 class="sec">心得</h2>
   <div class="panel">${b.review?`<p class="review">${esc(b.review)}</p>`:'<span class="muted">還沒寫心得。</span>'}</div>
+  ${(b.photos||[]).some(i=>PH.has(i))?`<h2 class="sec">照片</h2>${photoGrid(b.photos)}`:''}
   ${quotes.length?`<h2 class="sec">喜歡的句子</h2><div class="panel">${quotes.map(q=>`<p class="quote">${esc(q)}</p>`).join('')}</div>`:''}
   <div class="row-actions"><button class="btn" onclick="editBook('${b.id}')">編輯</button></div>`;
 }
@@ -372,10 +448,12 @@ function viewBook(id){
 const CATS=[
   {k:'books',label:'讀完的書',unit:'本',th:[1,3,5,10,15,20,30,50,75,100],deco:'rings'},
   {k:'pages',label:'頁數',unit:'頁',th:[500,1000,2500,5000,7500,10000,15000,25000],deco:'ticks'},
-  {k:'authors',label:'作者',unit:'位',th:[3,5,10,25,50],deco:'burst'},
+  {k:'authors',label:'作者',unit:'位',th:[1,3,5,10,15,25,50],deco:'burst'},
+  {k:'genres',label:'類別',unit:'類',th:[1,3,5,8,12],deco:'petals'},
   {k:'songs',label:'書的配樂',unit:'首',th:[5,10,25,50,100,250],deco:'waves'},
   {k:'reviews',label:'心得',unit:'篇',th:[1,5,10,25,50],deco:'star'},
-  {k:'diary',label:'日記天數',unit:'天',th:[7,30,100,200,365],deco:'dial'},
+  {k:'diary',label:'日記天數',unit:'天',th:[1,7,30,100,200,365],deco:'dial'},
+  {k:'photos',label:'閱讀照片',unit:'張',th:[1,10,30,100],deco:'frame'},
 ];
 const RIMS=[['#b39cf6','#7357d8','#7fd3f7'],['#7fd3f7','#2f7fd6','#f2e27a'],['#7fe0d0','#1f9a8a','#f6e27a'],['#9fe07f','#2f9e4f','#f4d35e'],['#ffd27a','#d9822b','#f27a8a']];
 const splitAuthors=a=>String(a||'').split(/[,，、&\/]| and /).map(s=>s.trim()).filter(Boolean);
@@ -384,6 +462,8 @@ function yearData(y){
   const fin=db.books.filter(b=>b.status==='finished'&&inY(b.finish)).sort((a,b)=>a.finish.localeCompare(b.finish));
   const ev={books:fin.map(b=>({d:b.finish,n:1})),pages:fin.filter(b=>+b.pages>0).map(b=>({d:b.finish,n:+b.pages})),reviews:fin.filter(b=>(b.review||'').trim()).map(b=>({d:b.finish,n:1})),authors:[]};
   const seen=new Set();fin.forEach(b=>splitAuthors(b.author).forEach(a=>{if(!seen.has(a)){seen.add(a);ev.authors.push({d:b.finish,n:1})}}));
+  const gs=new Set();ev.genres=[];fin.forEach(b=>{const g=genreOf(b);if(!gs.has(g)){gs.add(g);ev.genres.push({d:b.finish,n:1})}});
+  ev.photos=db.books.flatMap(b=>(b.photos||[]).map(()=>b.finish||b.start)).filter(inY).sort().map(d=>({d,n:1}));
   ev.songs=db.books.flatMap(b=>(b.songs||[]).map(s=>s.added||b.finish||b.start)).filter(inY).sort().map(d=>({d,n:1}));
   ev.diary=[...new Set(db.entries.map(e=>e.date).filter(inY))].sort().map(d=>({d,n:1}));
   return{fin,ev};
@@ -398,6 +478,8 @@ function deco(kind,c){
   if(kind==='dial'){for(let i=0;i<30;i++){const a=i/30*2*Math.PI;s+=L(34,40,a,2.2)}}
   if(kind==='rings'){[44,37,30].forEach((r,i)=>{s+=arc(r,(-150+i*12)*D,(-30-i*12)*D)+arc(r,(30+i*12)*D,(150-i*12)*D)})}
   if(kind==='waves'){[24,32,40].forEach(r=>{s+=arc(r,-80*D,-20*D)+arc(r,100*D,160*D)})}
+  if(kind==='petals'){for(let i=0;i<6;i++){const[x,y]=pt(30,i/6*2*Math.PI-Math.PI/2);s+=`<circle cx="${x}" cy="${y}" r="12" fill="none" stroke="${c}" stroke-width="1.4"/>`}}
+  if(kind==='frame'){s+=`<rect x="18" y="22" width="64" height="56" rx="10" fill="none" stroke="${c}" stroke-width="1.6"/><path d="M24 70l14-14 10 9 12-13 16 18" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" opacity=".5"/>`}
   if(kind==='burst'||kind==='star'){const n=kind==='burst'?8:8,ro=kind==='burst'?47:44,ri=kind==='burst'?27:35;let p=[];for(let i=0;i<n*2;i++){const a=i/(n*2)*2*Math.PI-Math.PI/2;p.push(pt(i%2?ri:ro,a).join(','))}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/>`}
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${s}</svg>`;
 }
@@ -427,6 +509,8 @@ function viewMilestones(){
   db.entries.forEach(e=>(e.songs||[]).forEach(s=>addSong(s,e.date,'日記')));
   db.books.forEach(b=>(b.songs||[]).forEach(s=>addSong(s,s.added||b.finish||b.start,'《'+b.title+'》')));
   const topS=Object.values(sc).sort((a,b)=>b.n-a.n).slice(0,5);
+  const gc={};fin.forEach(b=>{const g=genreOf(b);gc[g]=(gc[g]||0)+1});
+  const topG=Object.entries(gc).sort((a,b)=>b[1]-a[1]);
   const months=Array(12).fill(0);fin.forEach(b=>months[+b.finish.slice(5,7)-1]++);const mx=Math.max(1,...months);
   const ent=db.entries.filter(e=>inY(e.date));const mc=MOODS.map(m=>ent.filter(e=>+e.mood===m.v).length);
   const topBook=[...fin].sort((a,b)=>(b.rating||0)-(a.rating||0)||(b.songs||[]).length-(a.songs||[]).length)[0];
@@ -438,6 +522,7 @@ function viewMilestones(){
   <h2 class="sec">年度排行</h2>
   <div class="stats">
    <div class="panel"><b>最常讀的作者</b>${topA.length?`<ol class="rank" style="margin-top:10px">${topA.map(([a,n],i)=>`<li><span class="n">${i+1}</span><span>${esc(a)}</span><span class="v">${n} 本</span></li>`).join('')}</ol>`:'<p class="muted small">讀完一本書後就會出現。</p>'}</div>
+   <div class="panel"><b>讀過的類別</b> <span class="muted small">${topG.length} 類</span>${topG.length?`<div class="moodbar">${topG.map(([g,n])=>`<i style="--mc:${genreColor(g)};width:${n/fin.length*100}%" title="${esc(g)} ${n}"></i>`).join('')}</div><div class="cal-legend">${topG.map(([g,n])=>`<span style="--mc:${genreColor(g)}">${esc(g)} ${n}</span>`).join('')}</div>`:'<p class="muted small">讀完一本書後，會自動幫它分類。</p>'}</div>
    <div class="panel"><b>年度之歌</b>${topS.length?`<ol class="rank" style="margin-top:10px">${topS.map((x,i)=>`<li><span class="n">${i+1}</span><span>${esc(x.s.title||'未命名')}<br><span class="v">${esc([x.s.artist,[...x.src].slice(0,2).join('、')].filter(Boolean).join(' · '))}</span></span><span class="v">${x.n} 次</span></li>`).join('')}</ol>`:'<p class="muted small">在日記或書裡加歌後就會出現。</p>'}</div>
    <div class="panel"><b>每月讀完</b><div class="bars">${months.map((n,i)=>`<div title="${i+1}月 ${n} 本"><i style="height:${n/mx*70}px"></i><span>${i+1}</span></div>`).join('')}</div></div>
    <div class="panel"><b>心情分布</b> <span class="muted small">${ent.length} 篇日記</span>
@@ -450,7 +535,7 @@ function viewMilestones(){
 function viewSettings(){
   return `<div class="settings">
    <div class="panel"><b>資料存在哪裡？</b><p class="muted small">所有日記和書都只存在這台裝置的瀏覽器裡，不會上傳。換手機或清除瀏覽器資料前，記得先匯出備份。</p></div>
-   <div class="panel"><b>備份</b><p class="muted small">目前有 ${db.entries.length} 篇日記、${db.books.length} 本書。</p>
+   <div class="panel"><b>備份</b><p class="muted small">目前有 ${db.entries.length} 篇日記、${db.books.length} 本書、${PH.size} 張照片（照片也會一起備份）。</p>
      <div class="row-actions" style="margin-top:0;flex-wrap:wrap"><button class="btn" id="exportBtn">匯出 JSON</button><label class="btn ghost" for="importFile">匯入 JSON</label><input type="file" id="importFile" accept="application/json,.json" hidden></div></div>
    <div class="panel"><b>範例資料</b><p class="muted small">想先看看里程碑長什麼樣子？載入幾篇範例日記和書（會加在現有資料後面）。</p><button class="btn ghost" id="demoBtn">載入範例</button></div>
    <div class="panel"><b>清除全部</b><p class="muted small">刪除這台裝置上的所有日記和書，無法復原。</p><button class="btn danger" id="clearBtn">清除全部資料</button></div>
@@ -458,12 +543,12 @@ function viewSettings(){
 }
 document.addEventListener('click',e=>{
   if(e.target.id==='exportBtn'){
-    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify({...db,photos:Object.fromEntries(PH)})],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`melody-diary-${today()}.json`;a.click();toast('已匯出備份');
   }
   if(e.target.id==='demoBtn'){loadDemo();toast('已載入範例');go('milestones')}
   if(e.target.id==='clearBtn'){
-    if(e.target.dataset.confirm){db={entries:[],books:[]};save();toast('已清除');render()}
+    if(e.target.dataset.confirm){db={entries:[],books:[]};save();delPhotos([...PH.keys()]);toast('已清除');render()}
     else{e.target.dataset.confirm=1;e.target.textContent='再按一次確認清除'}
   }
 });
@@ -471,7 +556,9 @@ document.addEventListener('change',e=>{
   if(e.target.id!=='importFile')return;const f=e.target.files[0];if(!f)return;
   f.text().then(t=>{const d=JSON.parse(t);if(!Array.isArray(d.entries)||!Array.isArray(d.books))throw 0;
     const ids=new Set([...db.entries,...db.books].map(x=>x.id));
-    db.entries.push(...d.entries.filter(x=>!ids.has(x.id)));db.books.push(...d.books.filter(x=>!ids.has(x.id)));save();toast('匯入完成');render()})
+    db.entries.push(...d.entries.filter(x=>!ids.has(x.id)));db.books.push(...d.books.filter(x=>!ids.has(x.id)));save();
+    const ph=Object.entries(d.photos||{}).filter(([i,v])=>isImg(v)&&!PH.has(i));ph.forEach(([i,v])=>PH.set(i,v));putPhotos(ph.map(([i])=>i));
+    toast('匯入完成');render()})
    .catch(()=>toast('這個檔案不是旋律日記的備份'));
 });
 
@@ -486,19 +573,34 @@ function songRow(s={},feel){
   </div>`;
 }
 const songBlock=(songs,feel)=>`<div class="field"><span>${feel?'這本書的配樂':'今天的歌'}</span><div class="song-rows" data-feel="${feel?1:''}">${(songs.length?songs:[{}]).map(s=>songRow(s,feel)).join('')}</div><button type="button" class="linkbtn" data-add-song>＋ 再加一首</button></div>`;
+const photoItem=id=>`<div class="ph-item" data-pid="${esc(id)}"><img src="${esc(PH.get(id)||'')}" alt=""><button type="button" class="x" data-del-photo aria-label="移除照片">✕</button></div>`;
+const photoBlock=(ids,label)=>`<div class="field"><span>${label}</span><div class="ph-edit">${(ids||[]).filter(i=>PH.has(i)).map(photoItem).join('')}<label class="ph-add" aria-label="加照片">＋<input type="file" accept="image/*" multiple hidden data-photo-input></label></div></div>`;
+const readPhotos=()=>$$('.ph-item',form).map(x=>x.dataset.pid);
 const readSongs=()=>$$('.song-row',form).map(r=>({url:$('[name=s_url]',r).value.trim(),title:$('[name=s_title]',r).value.trim(),artist:$('[name=s_artist]',r).value.trim(),feeling:($('[name=s_feel]',r)?.value||'').trim(),added:r.dataset.added})).filter(s=>s.url||s.title);
 form.addEventListener('click',e=>{
   if(e.target.closest('[data-add-song]')){const box=$('.song-rows',form);box.insertAdjacentHTML('beforeend',songRow({},!!box.dataset.feel));$$('[name=s_url]',box).pop().focus()}
   if(e.target.closest('[data-del-song]'))e.target.closest('.song-row').remove();
+  if(e.target.closest('[data-del-photo]'))e.target.closest('.ph-item').remove();
   if(e.target.closest('[data-close]'))sheet.close();
   const r=e.target.closest('[data-pick]');if(r){const v=form._results[+r.dataset.pick];
-    form.elements.title.value=v.title;form.author.value=v.author;if(v.pages)form.pages.value=v.pages;if(v.cover)form.cover.value=v.cover;$('.results',form).innerHTML=''}
+    form.elements.title.value=v.title;form.author.value=v.author;if(v.pages)form.pages.value=v.pages;if(v.cover)form.cover.value=v.cover;form.hint.value=v.hint;updateGenreHint();$('.results',form).innerHTML=''}
   if(e.target.closest('[data-search]'))searchBooks();
   if(e.target.closest('[data-delete]')){const b=e.target.closest('[data-delete]');
     if(!b.dataset.confirm){b.dataset.confirm=1;b.textContent='再按一次刪除';return}
-    const{kind,id}=form.dataset;db[kind==='entry'?'entries':'books']=db[kind==='entry'?'entries':'books'].filter(x=>x.id!==id);save();sheet.close();toast('已刪除');kind==='book'?go('books'):render()}
+    const{kind,id}=form.dataset;delPhotos((db[kind==='entry'?'entries':'books'].find(x=>x.id===id)?.photos)||[]);db[kind==='entry'?'entries':'books']=db[kind==='entry'?'entries':'books'].filter(x=>x.id!==id);save();sheet.close();toast('已刪除');kind==='book'?go('books'):render()}
 });
-form.addEventListener('change',e=>{if(e.target.name==='s_url')autofill(e.target.closest('.song-row'))});
+form.addEventListener('change',async e=>{
+  if(e.target.name==='s_url')autofill(e.target.closest('.song-row'));
+  if(e.target.matches('[data-photo-input]')){
+    const add=e.target.closest('.ph-add');
+    for(const f of e.target.files){try{const id='p'+uid();PH.set(id,await shrink(f));form._added.push(id);add.insertAdjacentHTML('beforebegin',photoItem(id))}catch(err){toast('這張照片讀不出來')}}
+    e.target.value='';
+  }
+});
+form.addEventListener('input',e=>{if(['title','author'].includes(e.target.name))updateGenreHint()});
+function updateGenreHint(){const o=form.genre?.querySelector('option[value=""]');if(o)o.textContent=`自動：${classify({title:form.elements.title.value,author:form.author.value,hint:form.hint.value})}`}
+// photos added in a sheet that was closed without saving are thrown away
+sheet.addEventListener('close',()=>{if(!form._saved)form._added.forEach(i=>PH.delete(i))});
 async function autofill(row){
   const url=$('[name=s_url]',row).value.trim(),t=$('[name=s_title]',row),a=$('[name=s_artist]',row);
   if(!url||t.value)return;
@@ -510,31 +612,35 @@ async function searchBooks(){
   const q=form.q.value.trim(),box=$('.results',form);if(!q)return;
   box.innerHTML='<span class="muted small">搜尋中…</span>';
   try{const r=await fetch('https://www.googleapis.com/books/v1/volumes?maxResults=6&q='+encodeURIComponent(q));const j=await r.json();
-    form._results=(j.items||[]).map(it=>{const v=it.volumeInfo||{};return{title:v.title+(v.subtitle?'：'+v.subtitle:''),author:(v.authors||[]).join('、'),pages:v.pageCount||'',cover:(v.imageLinks?.thumbnail||'').replace(/^http:/,'https:')}});
+    form._results=(j.items||[]).map(it=>{const v=it.volumeInfo||{};return{title:v.title+(v.subtitle?'：'+v.subtitle:''),author:(v.authors||[]).join('、'),pages:v.pageCount||'',cover:(v.imageLinks?.thumbnail||'').replace(/^http:/,'https:'),hint:`${(v.categories||[]).join(' / ')}\n${(v.description||'').slice(0,400).replace(/\n/g,' ')}`}});
     box.innerHTML=form._results.length?form._results.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${v.cover?`<img src="${esc(v.cover)}" alt="">`:'<span class="noimg"></span>'}<div><b>${esc(v.title)}</b><br><span class="muted">${esc(v.author)}${v.pages?' · '+v.pages+' 頁':''}</span></div></button>`).join(''):'<span class="muted small">找不到，直接手動填也可以。</span>';
   }catch(e){box.innerHTML='<span class="muted small">搜尋失敗，直接手動填也可以。</span>'}
 }
-function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form.innerHTML=html;sheet.showModal()}
+function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form._added=[];form._saved=false;form.innerHTML=html;sheet.showModal()}
 function editEntry(id,date){
   const e=db.entries.find(x=>x.id===id)||{date:date||today(),mood:4,text:'',songs:[]};
   openSheet('entry',id,`<div class="sheet-head"><h3>${id?'編輯日記':'今天的心情'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
    <label class="field"><span>日期</span><input type="date" name="date" id="f-date" value="${esc(e.date)}" required></label>
    <div class="field"><span>心情</span><div class="moods">${MOODS.map(m=>`<label style="--mc:${m.c}"><input type="radio" name="mood" value="${m.v}" ${+e.mood===m.v?'checked':''}><span class="e">${m.e}</span>${m.l}</label>`).join('')}</div></div>
    <label class="field"><span>想說的話</span><textarea name="text" id="f-text" rows="5" placeholder="今天發生了什麼？">${esc(e.text)}</textarea></label>
+   ${photoBlock(e.photos,'照片')}
    ${songBlock(e.songs||[],false)}
    <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
 }
 function editBook(id){
-  const b=db.books.find(x=>x.id===id)||{title:'',author:'',cover:'',pages:'',status:'reading',start:today(),finish:'',rating:0,songs:[],review:'',quotes:''};
+  const b=db.books.find(x=>x.id===id)||{title:'',author:'',cover:'',pages:'',status:'reading',start:today(),finish:'',rating:0,songs:[],review:'',quotes:'',photos:[],genre:'',hint:''};
   openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯書':'加一本書'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
    ${id?'':`<div class="field"><span>搜尋書名（自動帶入作者、頁數、封面）</span><div style="display:flex;gap:6px"><input name="q" id="f-q" placeholder="例如：挪威的森林" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBooks()}"><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="results"></div></div>`}
    <label class="field"><span>書名</span><input name="title" id="f-title" value="${esc(b.title)}" required></label>
    <div class="grid2"><label class="field"><span>作者</span><input name="author" id="f-author" value="${esc(b.author)}"></label><label class="field"><span>頁數</span><input name="pages" id="f-pages" type="number" min="0" inputmode="numeric" value="${esc(b.pages)}"></label></div>
-   <label class="field"><span>封面圖片網址（可留空）</span><input name="cover" id="f-cover" value="${esc(b.cover)}" inputmode="url"></label>
+   <label class="field"><span>類別</span><select name="genre" id="f-genre"><option value="">自動：${esc(classify(b))}</option>${[...GENRES,OTHER].map(g=>`<option ${!b.genreAuto&&b.genre===g.k?'selected':''}>${g.k}</option>`).join('')}</select><span class="genre-hint">會依書名、作者和書籍資料自動分類，不對可以自己選。</span></label>
+   <input type="hidden" name="hint" value="${esc(b.hint)}">
+   <label class="field"><span>封面圖片網址（留空會用第一張照片）</span><input name="cover" id="f-cover" value="${esc(b.cover)}" inputmode="url"></label>
    <div class="grid2"><label class="field"><span>狀態</span><select name="status" id="f-status">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${b.status===k?'selected':''}>${l}</option>`).join('')}</select></label>
      <label class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></label></div>
    <div class="grid2"><label class="field"><span>開始讀</span><input type="date" name="start" id="f-start" value="${esc(b.start)}"></label><label class="field"><span>讀完</span><input type="date" name="finish" id="f-finish" value="${esc(b.finish)}"></label></div>
    ${songBlock(b.songs||[],true)}
+   ${photoBlock(b.photos,'照片（書封、讀書的地方、劃線的那一頁⋯）')}
    <label class="field"><span>心得</span><textarea name="review" id="f-review" rows="6" placeholder="這本書留給你什麼？">${esc(b.review)}</textarea></label>
    <label class="field"><span>喜歡的句子（一行一句）</span><textarea name="quotes" id="f-quotes" rows="3">${esc(b.quotes)}</textarea></label>
    <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
@@ -544,17 +650,28 @@ form.addEventListener('submit',e=>{
   const f=form,kind=f.dataset.kind,id=f.dataset.id||uid();
   if(kind==='entry'){
     if(!f.date.value)return toast('請選日期');
-    const rec={id,date:f.date.value,mood:+(f.mood.value||3),text:f.text.value.trim(),songs:readSongs(),created:db.entries.find(x=>x.id===id)?.created||Date.now()};
-    db.entries=db.entries.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');ui.cal=rec.date.slice(0,7);render();
+    const rec={id,date:f.date.value,mood:+(f.mood.value||3),text:f.text.value.trim(),songs:readSongs(),photos:readPhotos(),created:db.entries.find(x=>x.id===id)?.created||Date.now()};
+    commitPhotos(db.entries.find(x=>x.id===id),rec);db.entries=db.entries.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');ui.cal=rec.date.slice(0,7);render();
   }else{
     if(!f.elements.title.value.trim())return toast('請填書名');
     let status=f.status.value,finish=f.finish.value;
     if(finish&&status==='reading')status='finished';
     if(status==='finished'&&!finish)finish=today();
-    const rec={id,title:f.elements.title.value.trim(),author:f.author.value.trim(),pages:+f.pages.value||0,cover:f.cover.value.trim(),status,start:f.start.value,finish,rating:+(f.rating.value||0),songs:readSongs(),review:f.review.value.trim(),quotes:f.quotes.value};
+    let start=f.start.value;if(start&&finish&&start>finish)start='';
+    const rec={id,title:f.elements.title.value.trim(),author:f.author.value.trim(),pages:+f.pages.value||0,cover:f.cover.value.trim(),status,start,finish,rating:+(f.rating.value||0),songs:readSongs(),review:f.review.value.trim(),quotes:f.quotes.value,photos:readPhotos(),hint:f.hint.value,genreAuto:!f.genre.value};
+    rec.genre=f.genre.value||classify(rec);
+    commitPhotos(db.books.find(x=>x.id===id),rec);
     db.books=db.books.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');go('books',id);
   }
 });
+
+function commitPhotos(old,rec){
+  form._saved=true;
+  const keep=new Set(rec.photos);
+  putPhotos(rec.photos.filter(i=>form._added.includes(i)));
+  delPhotos([...form._added,...(old?.photos||[])].filter(i=>!keep.has(i)));
+}
+$('#viewer').addEventListener('click',()=>$('#viewer').close());
 
 function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2200)}
 
@@ -578,6 +695,7 @@ function loadDemo(){
 }
 
 /* boot */
+loadPhotos().then(()=>PH.size&&render());
 const h=location.hash.slice(1);
 if(h.startsWith('book-')){ui.tab='books';ui.bookId=h.slice(5)}else if(['diary','books','milestones','settings'].includes(h))ui.tab=h;
 render();
