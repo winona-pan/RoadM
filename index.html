@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="旋律日記">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>旋律日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column like a phone journal; bottom tab bar; medals laid out like Apple Music Replay. */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --ink:#1c1a29; --muted:#6d6a7c; --line:#e3e2ea;
+  --accent:#d6336c; --accent-soft:#fbe3ec; --gold:#c9962b;
+  --face:#fbfbfd; --shadow:0 1px 2px rgba(28,26,41,.06),0 6px 20px rgba(28,26,41,.06);
+  --display:"Noto Serif TC","Songti TC",serif;
+  --body:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --m1:#7d879c; --m2:#7f9fd4; --m3:#b9b2a3; --m4:#efab3e; --m5:#ea5f84;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121119; --surface:#1d1b27; --ink:#efedf6; --muted:#a19eb2; --line:#2e2b3b;
+  --accent:#f0658f; --accent-soft:#3a1f2b; --gold:#e3b34d; --face:#252331;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121119; --surface:#1d1b27; --ink:#efedf6; --muted:#a19eb2; --line:#2e2b3b;
+  --accent:#f0658f; --accent-soft:#3a1f2b; --gold:#e3b34d; --face:#252331;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);-webkit-font-smoothing:antialiased;padding-inline:16px;padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:640px;margin:0 auto}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px 10px;background:var(--bg)}
+.top h1{font:900 30px/1.2 var(--display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.add{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:24px;line-height:1;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+h2.sec{font:700 20px/1.3 var(--body);margin:28px 0 12px;display:flex;align-items:center;gap:6px}
+h2.month{font:600 15px/1.3 var(--body);color:var(--muted);margin:26px 0 10px;letter-spacing:.04em}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+.tabbar-in{display:flex;gap:4px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:999px;padding:5px;box-shadow:var(--shadow);width:100%;max-width:440px}
+.tab{flex:1;border:0;background:none;border-radius:999px;padding:7px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11.5px;font-weight:500;color:var(--muted)}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+
+/* mood calendar */
+.cal{background:var(--surface);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-head b{font-weight:700}
+.cal-nav{border:0;background:none;font-size:20px;width:34px;height:34px;border-radius:50%;color:var(--muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.cal-dow{font-size:11px;color:var(--muted)}
+.cal-day{aspect-ratio:1;border:0;border-radius:10px;background:var(--bg);font-size:12px;color:var(--muted);display:grid;place-items:center;padding:0;max-width:100%}
+.cal-day.has{color:#fff;font-weight:700;background:var(--mc)}
+.cal-day.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;font-size:12px;color:var(--muted)}
+.cal-legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--mc);margin-right:4px}
+.cta{display:block;width:100%;margin-top:14px;padding:14px;border:1.5px dashed var(--accent);border-radius:16px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+
+/* entries */
+.list{display:flex;flex-direction:column;gap:12px}
+.entry{background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid var(--mc)}
+.entry-head{display:flex;align-items:center;gap:10px}
+.entry-head .emo{font-size:28px;line-height:1}
+.entry-head .d{flex:1;min-width:0}
+.entry-date{font-weight:700}
+.entry-text{white-space:pre-wrap;margin:10px 0 4px;overflow-wrap:anywhere}
+.icon-btn{border:0;background:none;color:var(--muted);font-size:18px;width:34px;height:34px;border-radius:50%}
+.icon-btn:hover{background:var(--bg)}
+
+/* songs */
+.songs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.song{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:8px 10px}
+.song-play{width:38px;height:38px;border-radius:10px;border:0;color:#fff;font-size:14px;display:grid;place-items:center}
+.song-play.apple{background:linear-gradient(135deg,#fb5c74,#fa233b)}
+.song-play.spotify{background:#1db954}
+.song-play.youtube{background:#ff0033}
+.song-play.link{background:var(--muted)}
+.song-meta{min-width:0}
+.song-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-open{color:var(--muted);text-decoration:none;font-size:18px;padding:4px 6px}
+.song-feel{grid-column:1/-1;font-size:13.5px;margin:2px 2px 2px;padding-left:10px;border-left:2px solid var(--accent);white-space:pre-wrap;overflow-wrap:anywhere}
+.song-embed{grid-column:1/-1}
+.song-embed iframe{width:100%;border:0;border-radius:12px;display:block}
+.song-embed iframe.yt{aspect-ratio:16/9;height:auto;max-width:100%}
+
+/* books */
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:13.5px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:18px 14px;margin-top:16px}
+.book{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cover{aspect-ratio:2/3;width:100%;max-width:100%;border-radius:4px 10px 10px 4px;overflow:hidden;box-shadow:var(--shadow),inset 4px 0 0 rgba(0,0,0,.12);background:var(--cv,#8a7fa8);display:flex;align-items:flex-end;position:relative}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .ph{padding:10px;color:#fff;font:600 14px/1.35 var(--display);text-shadow:0 1px 2px rgba(0,0,0,.3);overflow-wrap:anywhere}
+.cover .notes{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:999px;padding:1px 7px}
+.book .t{font-weight:700;font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book .a{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stars{color:var(--gold);letter-spacing:1px;font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:40px 12px}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+/* book detail */
+.back{border:0;background:var(--surface);border-radius:999px;padding:6px 14px;box-shadow:var(--shadow);font-weight:500}
+.bd-hero{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:end;margin-top:16px}
+.bd-hero .cover{width:120px}
+.bd-hero h2{font:900 24px/1.3 var(--display);margin:0;text-wrap:balance;overflow-wrap:anywhere}
+.bd-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pill{font-size:12px;border-radius:999px;padding:2px 10px;background:var(--surface);border:1px solid var(--line)}
+.pill.reading{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.panel{background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+.review{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.quote{font:600 16px/1.7 var(--display);border-left:3px solid var(--gold);padding:2px 0 2px 12px;margin:0 0 10px;white-space:pre-wrap}
+.row-actions{display:flex;gap:8px;margin-top:20px}
+.btn{border:0;border-radius:12px;padding:10px 16px;background:var(--ink);color:var(--bg);font-weight:700}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:none;color:#d23b3b;border:1px solid currentColor}
+
+/* replay / milestones */
+.years{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.replay{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px;margin-top:14px;background:var(--surface);box-shadow:var(--shadow)}
+.replay::before{content:"";position:absolute;inset:-40% -20% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 40%,transparent),transparent 70%);pointer-events:none}
+.replay p{position:relative;margin:0;font:900 34px/1.22 var(--display);color:var(--muted);text-wrap:balance}
+.replay p b{color:var(--ink)}
+.replay .sub{font:500 14px/1.5 var(--body);margin-top:10px;color:var(--muted)}
+.medals{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 10px;margin-top:8px}
+.medal{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.coin{width:100%;max-width:120px;aspect-ratio:1;border-radius:50%;padding:7%;background:conic-gradient(from 200deg,var(--c1),var(--c2),var(--c3),var(--c1));box-shadow:0 8px 18px -8px var(--c2),inset 0 0 0 2px rgba(255,255,255,.5);position:relative}
+.coin::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.55),transparent 40%);pointer-events:none}
+.face{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--face) 60%,color-mix(in srgb,var(--c2) 18%,var(--face)));display:grid;place-items:center;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.15)}
+.face svg{position:absolute;inset:6%;width:88%;height:88%}
+.face .num{position:relative;font:500 clamp(15px,5vw,24px)/1 var(--body);color:var(--c2);letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.medal.locked .coin{filter:grayscale(1) opacity(.45)}
+.m-date{margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.m-label{font-size:15px;font-weight:500}
+.m-prog{width:70%;height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
+.m-prog i{display:block;height:100%;background:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.rank{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.rank li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:baseline}
+.rank .n{font:900 18px/1 var(--display);color:var(--accent)}
+.rank .v{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:90px;margin-top:6px}
+.bars div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px}
+.bars i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 2px 2px;min-height:2px}
+.bars span{font-size:10px;color:var(--muted)}
+.moodbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin-top:8px;background:var(--line)}
+.moodbar i{display:block;height:100%;background:var(--mc)}
+
+/* sheet */
+dialog{border:0;padding:0;width:min(640px,100%);max-height:92vh;border-radius:22px 22px 0 0;margin:auto auto 0;background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+@media (min-width:700px){dialog{border-radius:22px;margin:auto}}
+dialog::backdrop{background:rgba(15,12,25,.45)}
+.sheet{padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head h3{margin:0;font:900 20px/1.3 var(--display)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;min-width:0}
+textarea{resize:vertical}
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.moods label{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:14px;border:1.5px solid var(--line);font-size:12px;cursor:pointer}
+.moods label .e{font-size:26px;line-height:1.1}
+.moods input{position:absolute;opacity:0;pointer-events:none;width:auto}
+.moods label:has(input:checked){border-color:var(--mc);background:color-mix(in srgb,var(--mc) 18%,transparent)}
+.rate{display:flex;gap:4px;flex-direction:row-reverse;justify-content:flex-end}
+.rate input{position:absolute;opacity:0;width:auto}
+.rate label{font-size:28px;color:var(--line);cursor:pointer;line-height:1}
+.rate input:checked~label,.rate label:hover,.rate label:hover~label{color:var(--gold)}
+.song-rows{display:flex;flex-direction:column;gap:10px}
+.song-row{position:relative;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
+.song-row input,.song-row textarea{background:var(--surface)}
+.song-row .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:12px}
+.song-row .hint{font-size:12px;color:var(--muted)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:700;padding:4px 0;text-align:left}
+.results{display:flex;flex-direction:column;gap:6px}
+.result{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:6px}
+.result img,.result .noimg{width:36px;height:52px;object-fit:cover;border-radius:3px;background:var(--line)}
+.result div{min-width:0;font-size:13px}
+.sheet-foot{display:flex;gap:8px;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:var(--surface);padding-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;box-shadow:var(--shadow)}
+.settings{display:flex;flex-direction:column;gap:12px}
+.settings .panel p{margin:4px 0 10px}
+@media (prefers-reduced-motion:no-preference){.medal:not(.locked) .coin{transition:transform .25s}.medal:not(.locked):hover .coin{transform:rotate(-8deg) scale(1.04)}}
+@media (max-width:380px){.medals{gap:18px 6px}.replay p{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1 id="title">日記</h1><button class="add" id="addBtn" aria-label="新增">＋</button></header>
+  <main id="app"></main>
+</div>
+<nav class="tabbar"><div class="tabbar-in">
+  <button class="tab" data-tab="diary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>日記</button>
+  <button class="tab" data-tab="books"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h4v15H4zM10 5h4v15h-4zM15.5 6.2l3.8-1 3.4 13.6-3.8 1z"/></svg>書櫃</button>
+  <button class="tab" data-tab="milestones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="6"/><circle cx="12" cy="10" r="2.6"/><path d="M8.5 15 7 21l5-2.5 5 2.5-1.5-6"/></svg>里程碑</button>
+  <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>設定</button>
+</div></nav>
+<dialog id="sheet"><form id="form" class="sheet" novalidate></form></dialog>
+
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'#';
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const num=n=>Number(n||0).toLocaleString('en-US');
+const fmtDate=s=>{if(!s)return'';const[,m,d]=s.split('-');return `${+m}月${+d}日`};
+const DOW='日一二三四五六';
+const dow=s=>'週'+DOW[new Date(s+'T00:00').getDay()];
+
+const MOODS=[
+  {v:1,e:'😭',l:'很糟',c:'var(--m1)'},{v:2,e:'😔',l:'低落',c:'var(--m2)'},{v:3,e:'😐',l:'普通',c:'var(--m3)'},
+  {v:4,e:'🙂',l:'不錯',c:'var(--m4)'},{v:5,e:'🥰',l:'超好',c:'var(--m5)'}];
+const mood=v=>MOODS.find(m=>m.v===+v)||MOODS[2];
+const STATUS={reading:'在讀',finished:'讀完',want:'想讀'};
+
+/* ---------- storage ---------- */
+const KEY='melody-diary-v1';
+let db={entries:[],books:[]};
+try{const raw=localStorage.getItem(KEY);if(raw)db=Object.assign(db,JSON.parse(raw))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('無法儲存：瀏覽器封鎖了本機儲存空間')}};
+const ui={tab:'diary',bookId:null,filter:'reading',cal:today().slice(0,7),year:new Date().getFullYear()};
+
+/* ---------- song links ---------- */
+function parseSong(raw){
+  let u;try{u=new URL(String(raw||'').trim())}catch(e){return null}
+  const h=u.hostname.replace(/^(www|m)\./,'');
+  if(h==='open.spotify.com'){
+    const m=u.pathname.match(/\/(track|album|playlist|episode)\/([A-Za-z0-9]+)/);
+    if(m)return{p:'spotify',label:'Spotify',embed:`https://open.spotify.com/embed/${m[1]}/${m[2]}`,h:m[1]==='track'?152:352};
+  }
+  if(h==='music.apple.com'){
+    const song=u.searchParams.has('i')||u.pathname.includes('/song/');
+    return{p:'apple',label:'Apple Music',embed:`https://embed.music.apple.com${u.pathname}${u.search}`,h:song?175:450};
+  }
+  if(['music.youtube.com','youtube.com','youtu.be'].includes(h)){
+    const id=h==='youtu.be'?u.pathname.slice(1):(u.searchParams.get('v')||(u.pathname.match(/\/(?:shorts|embed|live)\/([\w-]+)/)||[])[1]);
+    const label=h==='music.youtube.com'?'YouTube Music':'YouTube';
+    if(id)return{p:'youtube',label,embed:`https://www.youtube-nocookie.com/embed/${id}`,yt:true};
+    const list=u.searchParams.get('list');
+    if(list)return{p:'youtube',label,embed:`https://www.youtube-nocookie.com/embed/videoseries?list=${list}`,yt:true};
+  }
+  return{p:'link',label:'連結'};
+}
+function songCard(s,showFeel){
+  const p=parseSong(s.url)||{p:'link',label:''};
+  const sub=[s.artist,p.label].filter(Boolean).join(' · ');
+  return `<div class="song">
+    <button type="button" class="song-play ${p.p}" data-play="${esc(p.embed||'')}" data-yt="${p.yt?1:''}" data-h="${p.h||0}" aria-label="播放 ${esc(s.title)}">${p.embed?'▶':'♪'}</button>
+    <div class="song-meta"><div class="song-title">${esc(s.title||'未命名的歌')}</div><div class="song-sub">${esc(sub)}</div></div>
+    ${s.url?`<a class="song-open" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" aria-label="在 ${esc(p.label)} 開啟">↗</a>`:'<span></span>'}
+    ${showFeel&&s.feeling?`<p class="song-feel">${esc(s.feeling)}</p>`:''}
+    <div class="song-embed"></div></div>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-play]');if(!b)return;
+  const box=b.closest('.song').querySelector('.song-embed');
+  if(box.innerHTML){box.innerHTML='';b.textContent='▶';return}
+  if(!b.dataset.play){const a=b.closest('.song').querySelector('a');if(a)window.open(a.href,'_blank','noopener');return}
+  box.innerHTML=`<iframe class="${b.dataset.yt?'yt':''}" ${b.dataset.yt?'':`height="${b.dataset.h}"`} src="${esc(b.dataset.play)}" allow="autoplay; encrypted-media; clipboard-write; fullscreen" loading="lazy"></iframe>`;
+  b.textContent='■';
+});
+
+/* ---------- router ---------- */
+function go(tab,bookId=null){ui.tab=tab;ui.bookId=bookId;location.hash=bookId?'book-'+bookId:tab;render()}
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h.startsWith('book-')){ui.tab='books';ui.bookId=h.slice(5)}else if(['diary','books','milestones','settings'].includes(h)){ui.tab=h;ui.bookId=null}render()});
+$$('.tab').forEach(t=>t.onclick=()=>go(t.dataset.tab));
+$('#addBtn').onclick=()=>ui.tab==='books'?editBook():editEntry();
+
+function render(){
+  const titles={diary:'日記',books:'書櫃',milestones:'閱讀回顧',settings:'設定'};
+  $('#title').textContent=titles[ui.tab];
+  $('#addBtn').hidden=!['diary','books'].includes(ui.tab)||!!ui.bookId;
+  $$('.tab').forEach(t=>t.dataset.tab===ui.tab?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
+  const app=$('#app');
+  app.innerHTML=ui.tab==='diary'?viewDiary():ui.tab==='books'?(ui.bookId?viewBook(ui.bookId):viewShelf()):ui.tab==='milestones'?viewMilestones():viewSettings();
+  window.scrollTo(0,0);
+}
+
+/* ---------- diary ---------- */
+function moodByDate(){const m={};[...db.entries].sort((a,b)=>a.created-b.created).forEach(e=>m[e.date]=e.mood);return m}
+function viewCalendar(){
+  const [y,mo]=ui.cal.split('-').map(Number);
+  const first=new Date(y,mo-1,1).getDay(),days=new Date(y,mo,0).getDate(),md=moodByDate(),t=today();
+  let cells=[...DOW].map(d=>`<div class="cal-dow">${d}</div>`).join('')+'<div></div>'.repeat(first);
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`,m=md[ds];
+    cells+=`<button class="cal-day ${m?'has':''} ${ds===t?'today':''}" style="${m?`--mc:${mood(m).c}`:''}" data-day="${ds}" aria-label="${fmtDate(ds)}${m?' '+mood(m).l:''}">${d}</button>`;
+  }
+  return `<section class="cal"><div class="cal-head"><button class="cal-nav" data-cal="-1" aria-label="上個月">‹</button><b>${y}年${mo}月 心情</b><button class="cal-nav" data-cal="1" aria-label="下個月">›</button></div>
+  <div class="cal-grid">${cells}</div>
+  <div class="cal-legend">${MOODS.map(m=>`<span style="--mc:${m.c}">${m.l}</span>`).join('')}</div></section>`;
+}
+function viewDiary(){
+  const list=[...db.entries].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
+  let html=viewCalendar();
+  if(!list.some(e=>e.date===today()))html+=`<button class="cta" data-new-entry>今天過得怎麼樣？寫下來，配一首歌 ✍️</button>`;
+  if(!list.length)return html+`<div class="empty"><b>還沒有日記</b>按右上角的 ＋，選個心情、貼一首今天的歌。</div>`;
+  let month='';
+  html+='<div class="list">';
+  for(const e of list){
+    const ym=e.date.slice(0,7);
+    if(ym!==month){month=ym;html+=`</div><h2 class="month">${+ym.slice(0,4)}年${+ym.slice(5)}月</h2><div class="list">`}
+    const m=mood(e.mood);
+    html+=`<article class="entry" style="--mc:${m.c}">
+      <div class="entry-head"><span class="emo" aria-hidden="true">${m.e}</span><div class="d"><div class="entry-date">${fmtDate(e.date)} ${dow(e.date)}</div><div class="small muted">${m.l}</div></div>
+      <button class="icon-btn" data-edit-entry="${e.id}" aria-label="編輯">✎</button></div>
+      ${e.text?`<p class="entry-text">${esc(e.text)}</p>`:''}
+      ${e.songs?.length?`<div class="songs">${e.songs.map(s=>songCard(s)).join('')}</div>`:''}
+    </article>`;
+  }
+  return html+'</div>';
+}
+document.addEventListener('click',e=>{
+  const t=e.target;
+  if(t.closest('[data-cal]')){const[y,m]=ui.cal.split('-').map(Number);const d=new Date(y,m-1+ +t.closest('[data-cal]').dataset.cal,1);ui.cal=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
+  else if(t.closest('[data-day]')){const ds=t.closest('[data-day]').dataset.day;const ex=[...db.entries].reverse().find(x=>x.date===ds);editEntry(ex?.id,ds)}
+  else if(t.closest('[data-new-entry]'))editEntry();
+  else if(t.closest('[data-edit-entry]'))editEntry(t.closest('[data-edit-entry]').dataset.editEntry);
+  else if(t.closest('[data-filter]')){ui.filter=t.closest('[data-filter]').dataset.filter;render()}
+  else if(t.closest('[data-book]'))go('books',t.closest('[data-book]').dataset.book);
+  else if(t.closest('[data-year]')){ui.year=+t.closest('[data-year]').dataset.year;render()}
+});
+
+/* ---------- books ---------- */
+const COVERS=['#7a6c9c','#3f7d8c','#b5654f','#5b7f4f','#9c5a7a','#45618f','#a3803a'];
+const coverColor=s=>COVERS[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%COVERS.length];
+const stars=n=>n?'★'.repeat(n)+'☆'.repeat(5-n):'';
+function coverHtml(b,badge=true){
+  const n=(b.songs||[]).length;
+  return `<div class="cover" style="--cv:${coverColor(b.title)}">${b.cover?`<img src="${esc(safeUrl(b.cover))}" alt="" loading="lazy" onerror="this.remove()">`:''}${b.cover?'':`<div class="ph">${esc(b.title)}</div>`}${badge&&n?`<span class="notes">♪ ${n}</span>`:''}</div>`;
+}
+function viewShelf(){
+  const counts={reading:0,finished:0,want:0};db.books.forEach(b=>counts[b.status]++);
+  const seg=Object.entries({reading:'在讀',finished:'讀完',want:'想讀',all:'全部'}).map(([k,l])=>`<button data-filter="${k}" aria-pressed="${ui.filter===k}">${l} ${k==='all'?db.books.length:counts[k]}</button>`).join('');
+  const list=db.books.filter(b=>ui.filter==='all'||b.status===ui.filter).sort((a,b)=>(b.finish||b.start||'').localeCompare(a.finish||a.start||''));
+  const shelf=list.length?`<div class="shelf">${list.map(b=>`<button class="book" data-book="${b.id}">${coverHtml(b)}<div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>${b.rating?`<div class="stars">${stars(b.rating)}</div>`:''}</button>`).join('')}</div>`
+    :`<div class="empty"><b>這一格還是空的</b>按 ＋ 加一本書，替它選幾首歌當配樂。</div>`;
+  return `<div class="seg" role="group" aria-label="篩選">${seg}</div>${shelf}`;
+}
+function viewBook(id){
+  const b=db.books.find(x=>x.id===id);
+  if(!b)return `<button class="back" onclick="go('books')">‹ 書櫃</button><div class="empty"><b>找不到這本書</b></div>`;
+  const dates=b.status==='finished'?`${b.start?fmtDate(b.start)+' – ':''}${fmtDate(b.finish)} 讀完`:b.start?`${fmtDate(b.start)} 開始`:'';
+  const quotes=(b.quotes||'').split('\n').map(q=>q.trim()).filter(Boolean);
+  return `<button class="back" onclick="go('books')">‹ 書櫃</button>
+  <div class="bd-hero">${coverHtml(b,false)}<div><h2>${esc(b.title)}</h2><div class="muted">${esc(b.author)}</div>
+    <div class="bd-meta"><span class="pill ${b.status}">${STATUS[b.status]}</span>${b.pages?`<span class="pill">${num(b.pages)} 頁</span>`:''}${dates?`<span class="pill">${dates}</span>`:''}</div>
+    ${b.rating?`<div class="stars" style="font-size:18px;margin-top:6px">${stars(b.rating)}</div>`:''}</div></div>
+  <h2 class="sec">這本書的配樂 <span class="muted small">${(b.songs||[]).length} 首</span></h2>
+  ${b.songs?.length?`<div class="songs">${b.songs.map(s=>songCard(s,true)).join('')}</div>`:`<div class="panel muted">還沒有配樂。哪首歌最像這本書的感覺？</div>`}
+  <h2 class="sec">心得</h2>
+  <div class="panel">${b.review?`<p class="review">${esc(b.review)}</p>`:'<span class="muted">還沒寫心得。</span>'}</div>
+  ${quotes.length?`<h2 class="sec">喜歡的句子</h2><div class="panel">${quotes.map(q=>`<p class="quote">${esc(q)}</p>`).join('')}</div>`:''}
+  <div class="row-actions"><button class="btn" onclick="editBook('${b.id}')">編輯</button></div>`;
+}
+
+/* ---------- milestones ---------- */
+const CATS=[
+  {k:'books',label:'讀完的書',unit:'本',th:[1,3,5,10,15,20,30,50,75,100],deco:'rings'},
+  {k:'pages',label:'頁數',unit:'頁',th:[500,1000,2500,5000,7500,10000,15000,25000],deco:'ticks'},
+  {k:'authors',label:'作者',unit:'位',th:[3,5,10,25,50],deco:'burst'},
+  {k:'songs',label:'書的配樂',unit:'首',th:[5,10,25,50,100,250],deco:'waves'},
+  {k:'reviews',label:'心得',unit:'篇',th:[1,5,10,25,50],deco:'star'},
+  {k:'diary',label:'日記天數',unit:'天',th:[7,30,100,200,365],deco:'dial'},
+];
+const RIMS=[['#b39cf6','#7357d8','#7fd3f7'],['#7fd3f7','#2f7fd6','#f2e27a'],['#7fe0d0','#1f9a8a','#f6e27a'],['#9fe07f','#2f9e4f','#f4d35e'],['#ffd27a','#d9822b','#f27a8a']];
+const splitAuthors=a=>String(a||'').split(/[,，、&\/]| and /).map(s=>s.trim()).filter(Boolean);
+function yearData(y){
+  const inY=d=>!!d&&d.startsWith(String(y));
+  const fin=db.books.filter(b=>b.status==='finished'&&inY(b.finish)).sort((a,b)=>a.finish.localeCompare(b.finish));
+  const ev={books:fin.map(b=>({d:b.finish,n:1})),pages:fin.filter(b=>+b.pages>0).map(b=>({d:b.finish,n:+b.pages})),reviews:fin.filter(b=>(b.review||'').trim()).map(b=>({d:b.finish,n:1})),authors:[]};
+  const seen=new Set();fin.forEach(b=>splitAuthors(b.author).forEach(a=>{if(!seen.has(a)){seen.add(a);ev.authors.push({d:b.finish,n:1})}}));
+  ev.songs=db.books.flatMap(b=>(b.songs||[]).map(s=>s.added||b.finish||b.start)).filter(inY).sort().map(d=>({d,n:1}));
+  ev.diary=[...new Set(db.entries.map(e=>e.date).filter(inY))].sort().map(d=>({d,n:1}));
+  return{fin,ev};
+}
+function reach(events,th){let total=0,i=0;const out=th.map(t=>({t,date:null}));for(const e of events){total+=e.n;while(i<th.length&&total>=th[i]){out[i].date=e.d;i++}}return{total,out}}
+const pt=(r,a)=>[(50+r*Math.cos(a)).toFixed(2),(50+r*Math.sin(a)).toFixed(2)];
+function deco(kind,c){
+  const L=(r1,r2,a,w=1.6)=>{const[x1,y1]=pt(r1,a),[x2,y2]=pt(r2,a);return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`};
+  const arc=(r,a1,a2)=>{const[x1,y1]=pt(r,a1),[x2,y2]=pt(r,a2);return `<path d="M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`};
+  const D=Math.PI/180;let s='';
+  if(kind==='ticks'){for(let i=0;i<48;i++){const a=i/48*2*Math.PI-Math.PI/2;if(Math.abs(Math.sin(a))<.28)continue;s+=L(36,36+(i%4===0?10:5),a)}}
+  if(kind==='dial'){for(let i=0;i<30;i++){const a=i/30*2*Math.PI;s+=L(34,40,a,2.2)}}
+  if(kind==='rings'){[44,37,30].forEach((r,i)=>{s+=arc(r,(-150+i*12)*D,(-30-i*12)*D)+arc(r,(30+i*12)*D,(150-i*12)*D)})}
+  if(kind==='waves'){[24,32,40].forEach(r=>{s+=arc(r,-80*D,-20*D)+arc(r,100*D,160*D)})}
+  if(kind==='burst'||kind==='star'){const n=kind==='burst'?8:8,ro=kind==='burst'?47:44,ri=kind==='burst'?27:35;let p=[];for(let i=0;i<n*2;i++){const a=i/(n*2)*2*Math.PI-Math.PI/2;p.push(pt(i%2?ri:ro,a).join(','))}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/>`}
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${s}</svg>`;
+}
+function medal(cat,m,idx,total){
+  const tier=Math.min(RIMS.length-1,idx),[c1,c2,c3]=RIMS[tier];
+  const locked=!m.date,pct=Math.min(100,total/m.t*100);
+  return `<div class="medal ${locked?'locked':''}" title="${cat.label} ${num(m.t)} ${cat.unit}">
+    <div class="coin" style="--c1:${c1};--c2:${c2};--c3:${c3}"><div class="face">${deco(cat.deco,c2)}<span class="num">${num(m.t)}</span></div></div>
+    <div class="m-date">${locked?`還差 ${num(m.t-total)} ${cat.unit}`:fmtDate(m.date)}</div><div class="m-label">${cat.label}</div>
+    ${locked?`<div class="m-prog"><i style="width:${pct}%"></i></div>`:''}</div>`;
+}
+function viewMilestones(){
+  const y=ui.year;
+  const years=new Set([new Date().getFullYear()]);
+  db.books.forEach(b=>b.finish&&years.add(+b.finish.slice(0,4)));db.entries.forEach(e=>years.add(+e.date.slice(0,4)));
+  const{fin,ev}=yearData(y);
+  const got=[],next=[];
+  CATS.forEach(cat=>{const r=reach(ev[cat.k],cat.th);r.out.forEach((m,i)=>{if(m.date)got.push({cat,m,i,total:r.total})});const n=r.out.findIndex(m=>!m.date);if(n>=0)next.push({cat,m:r.out[n],i:n,total:r.total})});
+  got.sort((a,b)=>b.m.date.localeCompare(a.m.date));
+  next.sort((a,b)=>b.total/b.m.t-a.total/a.m.t);
+  const pages=ev.pages.reduce((s,e)=>s+e.n,0);
+  // rankings
+  const ac={};fin.forEach(b=>splitAuthors(b.author).forEach(a=>ac[a]=(ac[a]||0)+1));
+  const topA=Object.entries(ac).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const sc={};const inY=d=>d&&d.startsWith(String(y));
+  const addSong=(s,d,src)=>{if(!inY(d))return;const k=(s.url||s.title).trim();if(!k)return;sc[k]=sc[k]||{s,n:0,src:new Set()};sc[k].n++;sc[k].src.add(src)};
+  db.entries.forEach(e=>(e.songs||[]).forEach(s=>addSong(s,e.date,'日記')));
+  db.books.forEach(b=>(b.songs||[]).forEach(s=>addSong(s,s.added||b.finish||b.start,'《'+b.title+'》')));
+  const topS=Object.values(sc).sort((a,b)=>b.n-a.n).slice(0,5);
+  const months=Array(12).fill(0);fin.forEach(b=>months[+b.finish.slice(5,7)-1]++);const mx=Math.max(1,...months);
+  const ent=db.entries.filter(e=>inY(e.date));const mc=MOODS.map(m=>ent.filter(e=>+e.mood===m.v).length);
+  const topBook=[...fin].sort((a,b)=>(b.rating||0)-(a.rating||0)||(b.songs||[]).length-(a.songs||[]).length)[0];
+  return `<div class="years">${[...years].sort((a,b)=>b-a).map(v=>`<div class="seg"><button data-year="${v}" aria-pressed="${v===y}">${v}</button></div>`).join('')}</div>
+  <section class="replay"><p>你在 ${y} 年讀了 <b>${num(pages)}</b> 頁，讀完 <b>${fin.length}</b> 本書。</p>
+   <div class="sub">寫了 ${ev.diary.length} 天日記 · 替書配了 ${ev.songs.length} 首歌${topBook?` · 年度之書《${esc(topBook.title)}》`:''}</div></section>
+  <h2 class="sec">里程碑 <span class="muted small">${got.length} 枚</span></h2>
+  <div class="medals">${got.map(g=>medal(g.cat,g.m,g.i,g.total)).join('')}${next.map(g=>medal(g.cat,g.m,g.i,g.total)).join('')}</div>
+  <h2 class="sec">年度排行</h2>
+  <div class="stats">
+   <div class="panel"><b>最常讀的作者</b>${topA.length?`<ol class="rank" style="margin-top:10px">${topA.map(([a,n],i)=>`<li><span class="n">${i+1}</span><span>${esc(a)}</span><span class="v">${n} 本</span></li>`).join('')}</ol>`:'<p class="muted small">讀完一本書後就會出現。</p>'}</div>
+   <div class="panel"><b>年度之歌</b>${topS.length?`<ol class="rank" style="margin-top:10px">${topS.map((x,i)=>`<li><span class="n">${i+1}</span><span>${esc(x.s.title||'未命名')}<br><span class="v">${esc([x.s.artist,[...x.src].slice(0,2).join('、')].filter(Boolean).join(' · '))}</span></span><span class="v">${x.n} 次</span></li>`).join('')}</ol>`:'<p class="muted small">在日記或書裡加歌後就會出現。</p>'}</div>
+   <div class="panel"><b>每月讀完</b><div class="bars">${months.map((n,i)=>`<div title="${i+1}月 ${n} 本"><i style="height:${n/mx*70}px"></i><span>${i+1}</span></div>`).join('')}</div></div>
+   <div class="panel"><b>心情分布</b> <span class="muted small">${ent.length} 篇日記</span>
+     <div class="moodbar">${ent.length?MOODS.map((m,i)=>mc[i]?`<i style="--mc:${m.c};width:${mc[i]/ent.length*100}%" title="${m.l} ${mc[i]}"></i>`:'').join(''):''}</div>
+     <div class="cal-legend">${MOODS.map((m,i)=>`<span style="--mc:${m.c}">${m.e} ${mc[i]}</span>`).join('')}</div></div>
+  </div>`;
+}
+
+/* ---------- settings ---------- */
+function viewSettings(){
+  return `<div class="settings">
+   <div class="panel"><b>資料存在哪裡？</b><p class="muted small">所有日記和書都只存在這台裝置的瀏覽器裡，不會上傳。換手機或清除瀏覽器資料前，記得先匯出備份。</p></div>
+   <div class="panel"><b>備份</b><p class="muted small">目前有 ${db.entries.length} 篇日記、${db.books.length} 本書。</p>
+     <div class="row-actions" style="margin-top:0;flex-wrap:wrap"><button class="btn" id="exportBtn">匯出 JSON</button><label class="btn ghost" for="importFile">匯入 JSON</label><input type="file" id="importFile" accept="application/json,.json" hidden></div></div>
+   <div class="panel"><b>範例資料</b><p class="muted small">想先看看里程碑長什麼樣子？載入幾篇範例日記和書（會加在現有資料後面）。</p><button class="btn ghost" id="demoBtn">載入範例</button></div>
+   <div class="panel"><b>清除全部</b><p class="muted small">刪除這台裝置上的所有日記和書，無法復原。</p><button class="btn danger" id="clearBtn">清除全部資料</button></div>
+  </div>`;
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='exportBtn'){
+    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`melody-diary-${today()}.json`;a.click();toast('已匯出備份');
+  }
+  if(e.target.id==='demoBtn'){loadDemo();toast('已載入範例');go('milestones')}
+  if(e.target.id==='clearBtn'){
+    if(e.target.dataset.confirm){db={entries:[],books:[]};save();toast('已清除');render()}
+    else{e.target.dataset.confirm=1;e.target.textContent='再按一次確認清除'}
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.id!=='importFile')return;const f=e.target.files[0];if(!f)return;
+  f.text().then(t=>{const d=JSON.parse(t);if(!Array.isArray(d.entries)||!Array.isArray(d.books))throw 0;
+    const ids=new Set([...db.entries,...db.books].map(x=>x.id));
+    db.entries.push(...d.entries.filter(x=>!ids.has(x.id)));db.books.push(...d.books.filter(x=>!ids.has(x.id)));save();toast('匯入完成');render()})
+   .catch(()=>toast('這個檔案不是旋律日記的備份'));
+});
+
+/* ---------- editors ---------- */
+const sheet=$('#sheet'),form=$('#form');
+function songRow(s={},feel){
+  return `<div class="song-row" data-added="${esc(s.added||today())}">
+    <button type="button" class="x" data-del-song aria-label="移除這首歌">✕</button>
+    <input name="s_url" placeholder="貼上 Apple Music / Spotify / YouTube Music 連結" value="${esc(s.url)}" inputmode="url" autocomplete="off">
+    <div class="grid2"><input name="s_title" placeholder="歌名" value="${esc(s.title)}"><input name="s_artist" placeholder="歌手" value="${esc(s.artist)}"></div>
+    ${feel?`<textarea name="s_feel" rows="2" placeholder="為什麼是這首？它讓你想到書裡的哪一段？">${esc(s.feeling)}</textarea>`:''}
+  </div>`;
+}
+const songBlock=(songs,feel)=>`<div class="field"><span>${feel?'這本書的配樂':'今天的歌'}</span><div class="song-rows" data-feel="${feel?1:''}">${(songs.length?songs:[{}]).map(s=>songRow(s,feel)).join('')}</div><button type="button" class="linkbtn" data-add-song>＋ 再加一首</button></div>`;
+const readSongs=()=>$$('.song-row',form).map(r=>({url:$('[name=s_url]',r).value.trim(),title:$('[name=s_title]',r).value.trim(),artist:$('[name=s_artist]',r).value.trim(),feeling:($('[name=s_feel]',r)?.value||'').trim(),added:r.dataset.added})).filter(s=>s.url||s.title);
+form.addEventListener('click',e=>{
+  if(e.target.closest('[data-add-song]')){const box=$('.song-rows',form);box.insertAdjacentHTML('beforeend',songRow({},!!box.dataset.feel));$$('[name=s_url]',box).pop().focus()}
+  if(e.target.closest('[data-del-song]'))e.target.closest('.song-row').remove();
+  if(e.target.closest('[data-close]'))sheet.close();
+  const r=e.target.closest('[data-pick]');if(r){const v=form._results[+r.dataset.pick];
+    form.elements.title.value=v.title;form.author.value=v.author;if(v.pages)form.pages.value=v.pages;if(v.cover)form.cover.value=v.cover;$('.results',form).innerHTML=''}
+  if(e.target.closest('[data-search]'))searchBooks();
+  if(e.target.closest('[data-delete]')){const b=e.target.closest('[data-delete]');
+    if(!b.dataset.confirm){b.dataset.confirm=1;b.textContent='再按一次刪除';return}
+    const{kind,id}=form.dataset;db[kind==='entry'?'entries':'books']=db[kind==='entry'?'entries':'books'].filter(x=>x.id!==id);save();sheet.close();toast('已刪除');kind==='book'?go('books'):render()}
+});
+form.addEventListener('change',e=>{if(e.target.name==='s_url')autofill(e.target.closest('.song-row'))});
+async function autofill(row){
+  const url=$('[name=s_url]',row).value.trim(),t=$('[name=s_title]',row),a=$('[name=s_artist]',row);
+  if(!url||t.value)return;
+  try{const r=await fetch('https://noembed.com/embed?url='+encodeURIComponent(url));const j=await r.json();
+    if(j.title&&!t.value)t.value=j.title;if(j.author_name&&!a.value)a.value=j.author_name.replace(/ - Topic$/,'')}catch(e){}
+  if(!t.value){try{const u=new URL(url);const parts=u.pathname.split('/');if(u.hostname==='music.apple.com'&&parts[2]==='song'&&parts[3])t.value=decodeURIComponent(parts[3]).replace(/-/g,' ')}catch(e){}}
+}
+async function searchBooks(){
+  const q=form.q.value.trim(),box=$('.results',form);if(!q)return;
+  box.innerHTML='<span class="muted small">搜尋中…</span>';
+  try{const r=await fetch('https://www.googleapis.com/books/v1/volumes?maxResults=6&q='+encodeURIComponent(q));const j=await r.json();
+    form._results=(j.items||[]).map(it=>{const v=it.volumeInfo||{};return{title:v.title+(v.subtitle?'：'+v.subtitle:''),author:(v.authors||[]).join('、'),pages:v.pageCount||'',cover:(v.imageLinks?.thumbnail||'').replace(/^http:/,'https:')}});
+    box.innerHTML=form._results.length?form._results.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${v.cover?`<img src="${esc(v.cover)}" alt="">`:'<span class="noimg"></span>'}<div><b>${esc(v.title)}</b><br><span class="muted">${esc(v.author)}${v.pages?' · '+v.pages+' 頁':''}</span></div></button>`).join(''):'<span class="muted small">找不到，直接手動填也可以。</span>';
+  }catch(e){box.innerHTML='<span class="muted small">搜尋失敗，直接手動填也可以。</span>'}
+}
+function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form.innerHTML=html;sheet.showModal()}
+function editEntry(id,date){
+  const e=db.entries.find(x=>x.id===id)||{date:date||today(),mood:4,text:'',songs:[]};
+  openSheet('entry',id,`<div class="sheet-head"><h3>${id?'編輯日記':'今天的心情'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
+   <label class="field"><span>日期</span><input type="date" name="date" id="f-date" value="${esc(e.date)}" required></label>
+   <div class="field"><span>心情</span><div class="moods">${MOODS.map(m=>`<label style="--mc:${m.c}"><input type="radio" name="mood" value="${m.v}" ${+e.mood===m.v?'checked':''}><span class="e">${m.e}</span>${m.l}</label>`).join('')}</div></div>
+   <label class="field"><span>想說的話</span><textarea name="text" id="f-text" rows="5" placeholder="今天發生了什麼？">${esc(e.text)}</textarea></label>
+   ${songBlock(e.songs||[],false)}
+   <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
+}
+function editBook(id){
+  const b=db.books.find(x=>x.id===id)||{title:'',author:'',cover:'',pages:'',status:'reading',start:today(),finish:'',rating:0,songs:[],review:'',quotes:''};
+  openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯書':'加一本書'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
+   ${id?'':`<div class="field"><span>搜尋書名（自動帶入作者、頁數、封面）</span><div style="display:flex;gap:6px"><input name="q" id="f-q" placeholder="例如：挪威的森林" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBooks()}"><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="results"></div></div>`}
+   <label class="field"><span>書名</span><input name="title" id="f-title" value="${esc(b.title)}" required></label>
+   <div class="grid2"><label class="field"><span>作者</span><input name="author" id="f-author" value="${esc(b.author)}"></label><label class="field"><span>頁數</span><input name="pages" id="f-pages" type="number" min="0" inputmode="numeric" value="${esc(b.pages)}"></label></div>
+   <label class="field"><span>封面圖片網址（可留空）</span><input name="cover" id="f-cover" value="${esc(b.cover)}" inputmode="url"></label>
+   <div class="grid2"><label class="field"><span>狀態</span><select name="status" id="f-status">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${b.status===k?'selected':''}>${l}</option>`).join('')}</select></label>
+     <label class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></label></div>
+   <div class="grid2"><label class="field"><span>開始讀</span><input type="date" name="start" id="f-start" value="${esc(b.start)}"></label><label class="field"><span>讀完</span><input type="date" name="finish" id="f-finish" value="${esc(b.finish)}"></label></div>
+   ${songBlock(b.songs||[],true)}
+   <label class="field"><span>心得</span><textarea name="review" id="f-review" rows="6" placeholder="這本書留給你什麼？">${esc(b.review)}</textarea></label>
+   <label class="field"><span>喜歡的句子（一行一句）</span><textarea name="quotes" id="f-quotes" rows="3">${esc(b.quotes)}</textarea></label>
+   <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
+}
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  const f=form,kind=f.dataset.kind,id=f.dataset.id||uid();
+  if(kind==='entry'){
+    if(!f.date.value)return toast('請選日期');
+    const rec={id,date:f.date.value,mood:+(f.mood.value||3),text:f.text.value.trim(),songs:readSongs(),created:db.entries.find(x=>x.id===id)?.created||Date.now()};
+    db.entries=db.entries.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');ui.cal=rec.date.slice(0,7);render();
+  }else{
+    if(!f.elements.title.value.trim())return toast('請填書名');
+    let status=f.status.value,finish=f.finish.value;
+    if(finish&&status==='reading')status='finished';
+    if(status==='finished'&&!finish)finish=today();
+    const rec={id,title:f.elements.title.value.trim(),author:f.author.value.trim(),pages:+f.pages.value||0,cover:f.cover.value.trim(),status,start:f.start.value,finish,rating:+(f.rating.value||0),songs:readSongs(),review:f.review.value.trim(),quotes:f.quotes.value};
+    db.books=db.books.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');go('books',id);
+  }
+});
+
+function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2200)}
+
+/* ---------- demo ---------- */
+function loadDemo(){
+  const y=new Date().getFullYear(),d=(m,dd)=>`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  const perfect={url:'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',title:'Perfect',artist:'Ed Sheeran'};
+  const books=[
+    ['小王子','安東尼・聖修伯里',112,d(1,20),5,[{...perfect,feeling:'玫瑰和小王子之間，就是這首歌那種笨拙又認真的喜歡。',added:d(1,20)}],'「真正重要的東西，用眼睛是看不見的。」大人版的閱讀，比小時候更痛一點。','真正重要的東西，用眼睛是看不見的。'],
+    ['挪威的森林','村上春樹',400,d(3,2),4,[{url:'',title:'Norwegian Wood',artist:'The Beatles',feeling:'書名的由來，直子最喜歡的歌。',added:d(3,2)}],'像下了一整本的雨。',''],
+    ['被討厭的勇氣','岸見一郎、古賀史健',336,d(4,18),4,[],'課題分離這件事，我還在練習。',''],
+    ['原子習慣','詹姆斯・克利爾',336,d(6,9),5,[{url:'',title:'Shape of You',artist:'Ed Sheeran',feeling:'每天跑步時聽的歌，剛好就是一個「習慣堆疊」。',added:d(6,9)}],'',''],
+    ['解憂雜貨店','東野圭吾',384,d(7,30),5,[{url:'',title:'Sarà Perché Ti Amo',artist:'Ricchi e Poveri',feeling:'輕快、溫暖，像那些回信。',added:d(7,30)}],'每個人的煩惱都被認真對待了。',''],
+    ['人間失格','太宰治',176,d(9,14),3,[],'',''],
+  ].map(([title,author,pages,finish,rating,songs,review,quotes])=>({id:uid(),title,author,pages,cover:'',status:'finished',start:'',finish,rating,songs,review,quotes}));
+  books.push({id:uid(),title:'百年孤寂',author:'馬奎斯',pages:448,cover:'',status:'reading',start:d(10,1),finish:'',rating:0,songs:[{url:'',title:'Kagerou',artist:'Vaundy',feeling:'讀到雨下了四年那段時一直循環。',added:d(10,5)}],review:'',quotes:''});
+  const ent=[[d(10,8),5,'把《百年孤寂》的家譜畫完了，終於分得清誰是誰。',[{url:'',title:'Kagerou',artist:'Vaundy'}]],
+    [d(10,7),3,'下雨，通勤好擠。',[perfect]],[d(10,5),4,'週末去書店待了一下午。',[]],[d(10,2),2,'有點累，早點睡。',[]],[d(9,28),5,'和朋友去看了演唱會！',[{url:'',title:'Shape of You',artist:'Ed Sheeran'}]]]
+    .map(([date,mood,text,songs],i)=>({id:uid(),date,mood,text,songs,created:Date.now()-i}));
+  db.books.push(...books);db.entries.push(...ent);save();
+}
+
+/* boot */
+const h=location.hash.slice(1);
+if(h.startsWith('book-')){ui.tab='books';ui.bookId=h.slice(5)}else if(['diary','books','milestones','settings'].includes(h))ui.tab=h;
+render();
+</script>
+</body>
+</html>
