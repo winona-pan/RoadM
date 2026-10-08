@@ -646,6 +646,8 @@ async function searchBooks(){
   if(!form.elements.title.value)form.elements.title.value=q;
   box.innerHTML=form._results.length?form._results.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${v.cover?`<img src="${esc(safeUrl(v.cover))}" alt="">`:'<span class="noimg"></span>'}<div><b>${esc(v.title)}</b><br><span class="muted">${esc(v.author)}${v.pages?' · '+v.pages+' 頁':''}</span></div></button>`).join('')
     :`<span class="muted small">${lists.every(l=>l===null)?'連不上書籍資料庫（檢查一下網路）。':'找不到這本書。'}已先把書名填好，其他手動填也可以。</span>`;
+  const e=encodeURIComponent(q);
+  box.insertAdjacentHTML('beforeend',`<div class="small muted">在其他地方找：${[['Google',`https://www.google.com/search?tbm=bks&q=${e}`],['讀墨',`https://readmoo.com/search/keyword?q=${e}`],['Kindle',`https://www.amazon.com/s?i=digital-text&k=${e}`],['博客來',`https://search.books.com.tw/search/query/key/${e}/cat/all`]].map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent);margin-left:8px">${l}</a>`).join('')}</div>`);
   updateGenreHint();
 }
 function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form._added=[];form._saved=false;form.innerHTML=html;sheet.showModal()}
