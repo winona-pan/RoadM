@@ -611,8 +611,8 @@ async function autofill(row){
     if(j.title&&!t.value)t.value=j.title;if(j.author_name&&!a.value)a.value=j.author_name.replace(/ - Topic$/,'')}catch(e){}
   if(!t.value){try{const u=new URL(url);const parts=u.pathname.split('/');if(u.hostname==='music.apple.com'&&parts[2]==='song'&&parts[3])t.value=decodeURIComponent(parts[3]).replace(/-/g,' ')}catch(e){}}
 }
-// Search several catalogues at once. Keyless Google Books is shared by everyone and is usually out of quota,
-// so Apple Books (Taiwan store, strong on Chinese titles) comes first and Open Library is a last resort.
+// Search several catalogues at once. Google Books has the best Chinese coverage but keyless calls share one
+// exhausted quota, so it only really works once the user pastes their own key in 設定.
 const GB_KEY='melody-diary-gbkey';
 const gbKey=()=>{try{return localStorage.getItem(GB_KEY)||''}catch(e){return''}};
 const stripTags=t=>String(t||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
@@ -627,12 +627,12 @@ function jsonp(url,ms=8000){
 }
 const getJson=async url=>{const r=await fetch(url,AbortSignal.timeout?{signal:AbortSignal.timeout(8000)}:{});if(!r.ok)throw new Error(r.status);return r.json()};
 const SOURCES=[
-  async q=>(await jsonp(`https://itunes.apple.com/search?media=ebook&country=tw&limit=8&term=${encodeURIComponent(q)}`)).results.map(v=>({
-    title:v.trackName,author:v.artistName||'',pages:'',cover:(v.artworkUrl100||'').replace('100x100bb','600x600bb'),
-    hint:`${(v.genres||[]).join(' / ')}\n${stripTags(v.description).slice(0,400)}`})),
   async q=>((await getJson(`https://www.googleapis.com/books/v1/volumes?maxResults=6&q=${encodeURIComponent(q)}${gbKey()?'&key='+encodeURIComponent(gbKey()):''}`)).items||[]).map(it=>{const v=it.volumeInfo||{};return{
     title:v.title+(v.subtitle?'：'+v.subtitle:''),author:(v.authors||[]).join('、'),pages:v.pageCount||'',cover:(v.imageLinks?.thumbnail||'').replace(/^http:/,'https:'),
     hint:`${(v.categories||[]).join(' / ')}\n${(v.description||'').slice(0,400).replace(/\n/g,' ')}`}}),
+  async q=>(await jsonp(`https://itunes.apple.com/search?media=ebook&country=tw&limit=8&term=${encodeURIComponent(q)}`)).results.map(v=>({
+    title:v.trackName,author:v.artistName||'',pages:'',cover:(v.artworkUrl100||'').replace('100x100bb','600x600bb'),
+    hint:`${(v.genres||[]).join(' / ')}\n${stripTags(v.description).slice(0,400)}`})),
   async q=>((await getJson(`https://openlibrary.org/search.json?limit=6&fields=title,author_name,number_of_pages_median,cover_i,subject&q=${encodeURIComponent(q)}`)).docs||[]).map(v=>({
     title:v.title,author:(v.author_name||[]).join('、'),pages:v.number_of_pages_median||'',cover:v.cover_i?`https://covers.openlibrary.org/b/id/${v.cover_i}-M.jpg`:'',
     hint:`${(v.subject||[]).slice(0,8).join(' / ')}\n`})),
