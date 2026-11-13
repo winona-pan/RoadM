@@ -4,621 +4,526 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="旋律日記">
+<meta name="apple-mobile-web-app-title" content="我的書房">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>旋律日記</title>
+<title>我的書房</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* Layout: one narrow column like a phone journal; bottom tab bar; medals laid out like Apple Music Replay. */
+/* A home library catalogue: one phone-width column, bottom tab bar, bottom-sheet editor. */
 :root{
-  --bg:#f4f5f8; --surface:#ffffff; --ink:#1c1a29; --muted:#6d6a7c; --line:#e3e2ea;
-  --accent:#d6336c; --accent-soft:#fbe3ec; --gold:#c9962b;
-  --face:#fbfbfd; --shadow:0 1px 2px rgba(28,26,41,.06),0 6px 20px rgba(28,26,41,.06);
+  --bg:#f5f1ea; --surface:#fffdf9; --ink:#29231d; --muted:#766c60; --line:#e6ded2;
+  --accent:#2f6b57; --accent-soft:#dcebe4; --warn:#b4532a; --warn-soft:#f8e4d9;
+  --unread:#9a8f80; --reading:#c98a1c; --done:#2f6b57; --dropped:#a39a91;
+  --shadow:0 1px 2px rgba(41,35,29,.06),0 6px 20px rgba(41,35,29,.06);
   --display:"Noto Serif TC","Songti TC",serif;
   --body:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
-  --m1:#7d879c; --m2:#7f9fd4; --m3:#b9b2a3; --m4:#efab3e; --m5:#ea5f84;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#121119; --surface:#1d1b27; --ink:#efedf6; --muted:#a19eb2; --line:#2e2b3b;
-  --accent:#f0658f; --accent-soft:#3a1f2b; --gold:#e3b34d; --face:#252331;
+  --bg:#17140f; --surface:#221e18; --ink:#f1ebe2; --muted:#ab9f90; --line:#363027;
+  --accent:#6fbf9f; --accent-soft:#1f3a30; --warn:#ec8a5e; --warn-soft:#3d2419;
+  --unread:#8f8577; --reading:#e3aa45; --done:#6fbf9f; --dropped:#6f665c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121119; --surface:#1d1b27; --ink:#efedf6; --muted:#a19eb2; --line:#2e2b3b;
-  --accent:#f0658f; --accent-soft:#3a1f2b; --gold:#e3b34d; --face:#252331;
+  --bg:#17140f; --surface:#221e18; --ink:#f1ebe2; --muted:#ab9f90; --line:#363027;
+  --accent:#6fbf9f; --accent-soft:#1f3a30; --warn:#ec8a5e; --warn-soft:#3d2419;
+  --unread:#8f8577; --reading:#e3aa45; --done:#6fbf9f; --dropped:#6f665c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);-webkit-font-smoothing:antialiased;padding-inline:16px;padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased;padding-inline:16px;padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:640px;margin:0 auto}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px 10px;background:var(--bg)}
-.top h1{font:900 30px/1.2 var(--display);margin:0;letter-spacing:.02em;text-wrap:balance}
-.add{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:24px;line-height:1;box-shadow:var(--shadow)}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-h2.sec{font:700 20px/1.3 var(--body);margin:28px 0 12px;display:flex;align-items:center;gap:6px}
-h2.month{font:600 15px/1.3 var(--body);color:var(--muted);margin:26px 0 10px;letter-spacing:.04em}
+.muted{color:var(--muted)} .small{font-size:13px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:calc(14px + env(safe-area-inset-top,0px)) 8px}
+.top h1{font:900 28px/1.2 var(--display);margin:0;letter-spacing:.03em}
+.add{width:42px;height:42px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:26px;line-height:1;box-shadow:var(--shadow);flex:none}
+h2.sec{font:700 17px/1.3 var(--body);margin:26px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+h2.sec small{font-weight:400;font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border-radius:18px;padding:14px;box-shadow:var(--shadow)}
 
 /* tab bar */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
-.tabbar-in{display:flex;gap:4px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:999px;padding:5px;box-shadow:var(--shadow);width:100%;max-width:440px}
+.tabbar-in{display:flex;gap:4px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:999px;padding:5px;box-shadow:var(--shadow);width:100%;max-width:400px}
 .tab{flex:1;border:0;background:none;border-radius:999px;padding:7px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11.5px;font-weight:500;color:var(--muted)}
 .tab svg{width:22px;height:22px}
 .tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
 
-/* mood calendar */
-.cal{background:var(--surface);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
-.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.cal-head b{font-weight:700}
-.cal-nav{border:0;background:none;font-size:20px;width:34px;height:34px;border-radius:50%;color:var(--muted)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
-.cal-dow{font-size:11px;color:var(--muted)}
-.cal-day{aspect-ratio:1;border:0;border-radius:10px;background:var(--bg);font-size:12px;color:var(--muted);display:grid;place-items:center;padding:0;max-width:100%}
-.cal-day.has{color:#fff;font-weight:700;background:var(--mc)}
-.cal-day.today{box-shadow:inset 0 0 0 2px var(--ink)}
-.cal-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;font-size:12px;color:var(--muted)}
-.cal-legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--mc);margin-right:4px}
-.cta{display:block;width:100%;margin-top:14px;padding:14px;border:1.5px dashed var(--accent);border-radius:16px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+/* search */
+.search{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:6px 10px}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 12px;box-shadow:var(--shadow)}
+.search-box input::-webkit-search-cancel-button{display:none}
+.search-box input{flex:1;min-width:0;border:0;background:none;padding:8px 0;outline:none;font-size:16px}
+.icon-btn{border:0;background:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--muted);flex:none}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn.solid{background:var(--accent-soft);color:var(--accent)}
+.verdict{border-radius:14px;padding:12px 14px;margin:4px 0 12px;font-weight:500}
+.verdict.have{background:var(--warn-soft);color:var(--warn)}
+.verdict.free{background:var(--accent-soft);color:var(--accent)}
+.verdict .small{font-weight:400;display:block;margin-top:2px}
+.verdict button{margin-top:8px}
 
-/* entries */
-.list{display:flex;flex-direction:column;gap:12px}
-.entry{background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid var(--mc)}
-.entry-head{display:flex;align-items:center;gap:10px}
-.entry-head .emo{font-size:28px;line-height:1}
-.entry-head .d{flex:1;min-width:0}
-.entry-date{font-weight:700}
-.entry-text{white-space:pre-wrap;margin:10px 0 4px;overflow-wrap:anywhere}
-.icon-btn{border:0;background:none;color:var(--muted);font-size:18px;width:34px;height:34px;border-radius:50%}
-.icon-btn:hover{background:var(--bg)}
+.stats{display:flex;gap:8px;margin:2px 0 10px;flex-wrap:wrap}
+.stat{flex:1;min-width:70px;background:var(--surface);border-radius:14px;padding:8px 10px;box-shadow:var(--shadow)}
+.stat b{display:block;font:900 22px/1.1 var(--display)}
+.stat span{font-size:12px;color:var(--muted)}
 
-/* songs */
-.songs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.song{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:8px 10px}
-.song-play{width:38px;height:38px;border-radius:10px;border:0;color:#fff;font-size:14px;display:grid;place-items:center}
-.song-play.apple{background:linear-gradient(135deg,#fb5c74,#fa233b)}
-.song-play.spotify{background:#1db954}
-.song-play.youtube{background:#ff0033}
-.song-play.link{background:var(--muted)}
-.song-meta{min-width:0}
-.song-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.song-sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.song-open{color:var(--muted);text-decoration:none;font-size:18px;padding:4px 6px}
-.song-feel{grid-column:1/-1;font-size:13.5px;margin:2px 2px 2px;padding-left:10px;border-left:2px solid var(--accent);white-space:pre-wrap;overflow-wrap:anywhere}
-.song-embed{grid-column:1/-1}
-.song-embed iframe{width:100%;border:0;border-radius:12px;display:block}
-.song-embed iframe.yt{aspect-ratio:16/9;height:auto;max-width:100%}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13.5px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.tools{display:flex;gap:8px;margin-bottom:8px}
+.tools select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 8px;font-size:13.5px}
 
-/* books */
-.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
-.seg button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:13.5px;white-space:nowrap}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:18px 14px;margin-top:16px}
-.book{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0}
-.cover{aspect-ratio:2/3;width:100%;max-width:100%;border-radius:4px 10px 10px 4px;overflow:hidden;box-shadow:var(--shadow),inset 4px 0 0 rgba(0,0,0,.12);background:var(--cv,#8a7fa8);display:flex;align-items:flex-end;position:relative}
-.cover img{width:100%;height:100%;object-fit:cover;display:block}
-.cover .ph{padding:10px;color:#fff;font:600 14px/1.35 var(--display);text-shadow:0 1px 2px rgba(0,0,0,.3);overflow-wrap:anywhere}
-.cover .notes{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:999px;padding:1px 7px}
-.book .t{font-weight:700;font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.book .a{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stars{color:var(--gold);letter-spacing:1px;font-size:13px}
-.empty{text-align:center;color:var(--muted);padding:40px 12px}
-.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+/* book rows */
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--surface);border-radius:14px;padding:8px 10px 8px 8px;box-shadow:var(--shadow)}
+.cover{width:44px;height:62px;border-radius:5px;flex:none;object-fit:cover;background:var(--line)}
+.spine{width:44px;height:62px;border-radius:5px;flex:none;display:grid;place-items:center;color:#fff;font:900 18px/1 var(--display);background:var(--c,#8a7f70);box-shadow:inset -5px 0 0 rgba(0,0,0,.12)}
+.meta{flex:1;min-width:0}
+.meta b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta .sub{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmts{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.fmt{font-size:11px;border-radius:5px;padding:0 6px;border:1px solid var(--line);color:var(--muted);line-height:18px}
+.fmt.loan{border-color:var(--warn);color:var(--warn)}
+.pill{flex:none;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;color:#fff;background:var(--c)}
+.st-unread{--c:var(--unread)} .st-reading{--c:var(--reading)} .st-done{--c:var(--done)} .st-dropped{--c:var(--dropped)}
 
-/* book detail */
-.back{border:0;background:var(--surface);border-radius:999px;padding:6px 14px;box-shadow:var(--shadow);font-weight:500}
-.bd-hero{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:end;margin-top:16px}
-.bd-hero .cover{width:120px}
-.bd-hero h2{font:900 24px/1.3 var(--display);margin:0;text-wrap:balance;overflow-wrap:anywhere}
-.bd-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.pill{font-size:12px;border-radius:999px;padding:2px 10px;background:var(--surface);border:1px solid var(--line)}
-.pill.reading{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
-.panel{background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
-.review{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
-.quote{font:600 16px/1.7 var(--display);border-left:3px solid var(--gold);padding:2px 0 2px 12px;margin:0 0 10px;white-space:pre-wrap}
-.row-actions{display:flex;gap:8px;margin-top:20px}
-.btn{border:0;border-radius:12px;padding:10px 16px;background:var(--ink);color:var(--bg);font-weight:700}
-.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
-.btn.danger{background:none;color:#d23b3b;border:1px solid currentColor}
+/* series card */
+.series{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.series>.row{box-shadow:none;border-radius:0}
+.series .count{font-size:12px;color:var(--muted)}
+.vols{display:flex;flex-wrap:wrap;gap:4px;padding:0 10px 10px 64px}
+.vol{min-width:28px;height:26px;border-radius:6px;font-size:12px;font-weight:700;border:1.5px solid var(--c);background:var(--c);color:#fff;padding:0 5px}
+.vol.st-unread{background:transparent;color:var(--c)}
+.vol.missing{border-style:dashed;border-color:var(--line);background:transparent;color:var(--muted);cursor:default}
+.vol.next{border-style:dashed;border-color:var(--accent);background:transparent;color:var(--accent)}
+.series .inner{display:flex;flex-direction:column;gap:6px;padding:0 8px 8px}
+.series .inner .row{box-shadow:none;background:var(--bg)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 0 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:4px;vertical-align:-1px}
+.legend i.o{background:transparent;border:1.5px solid var(--c)}
 
-/* replay / milestones */
-.years{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.replay{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px;margin-top:14px;background:var(--surface);box-shadow:var(--shadow)}
-.replay::before{content:"";position:absolute;inset:-40% -20% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 40%,transparent),transparent 70%);pointer-events:none}
-.replay p{position:relative;margin:0;font:900 34px/1.22 var(--display);color:var(--muted);text-wrap:balance}
-.replay p b{color:var(--ink)}
-.replay .sub{font:500 14px/1.5 var(--body);margin-top:10px;color:var(--muted)}
-.medals{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 10px;margin-top:8px}
-.medal{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
-.coin{width:100%;max-width:120px;aspect-ratio:1;border-radius:50%;padding:7%;background:conic-gradient(from 200deg,var(--c1),var(--c2),var(--c3),var(--c1));box-shadow:0 8px 18px -8px var(--c2),inset 0 0 0 2px rgba(255,255,255,.5);position:relative}
-.coin::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.55),transparent 40%);pointer-events:none}
-.face{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--face) 60%,color-mix(in srgb,var(--c2) 18%,var(--face)));display:grid;place-items:center;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.15)}
-.face svg{position:absolute;inset:6%;width:88%;height:88%}
-.face .num{position:relative;font:500 clamp(15px,5vw,24px)/1 var(--body);color:var(--c2);letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-shadow:0 1px 0 rgba(255,255,255,.6)}
-.medal.locked .coin{filter:grayscale(1) opacity(.45)}
-.m-date{margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
-.m-label{font-size:15px;font-weight:500}
-.m-prog{width:70%;height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
-.m-prog i{display:block;height:100%;background:var(--accent)}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.rank{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
-.rank li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:baseline}
-.rank .n{font:900 18px/1 var(--display);color:var(--accent)}
-.rank .v{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:90px;margin-top:6px}
-.bars div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px}
-.bars i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 2px 2px;min-height:2px}
-.bars span{font-size:10px;color:var(--muted)}
-.moodbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin-top:8px;background:var(--line)}
-.moodbar i{display:block;height:100%;background:var(--mc)}
+.empty{text-align:center;padding:36px 12px;color:var(--muted)}
+.empty .btn{margin-top:12px}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner .acts{display:flex;gap:8px;margin-top:8px}
+
+/* plan page */
+.big{font:900 44px/1 var(--display)}
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.pick{display:flex;gap:14px;align-items:center}
+.pick .cover,.pick .spine{width:70px;height:100px;font-size:26px}
+.pick h3{font:900 20px/1.3 var(--display);margin:0 0 2px}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:9px 16px;font-weight:700}
+.btn.ghost{background:var(--accent-soft);color:var(--accent)}
+.btn.danger{background:none;color:var(--warn);padding-inline:4px}
+.btn.sm{padding:5px 12px;font-size:13px;border-radius:10px}
+.btn,.icon-btn{white-space:nowrap;flex:none}
+.search-row{display:flex;gap:6px;align-items:stretch}.search-row input{flex:1;min-width:0}.search-row .icon-btn{height:auto;min-height:42px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.line-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.line-item:first-child{border-top:0}
+.line-item .meta b{font-size:14.5px}
+.nudge{font-size:14px;margin-top:6px}
+
+/* settings */
+.set{display:flex;flex-direction:column;gap:2px}
+.set .line-item{justify-content:space-between}
+.set input[type=number]{width:72px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 8px;text-align:right}
 
 /* sheet */
-dialog{border:0;padding:0;width:min(640px,100%);max-height:92vh;border-radius:22px 22px 0 0;margin:auto auto 0;background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.2)}
-@media (min-width:700px){dialog{border-radius:22px;margin:auto}}
-dialog::backdrop{background:rgba(15,12,25,.45)}
-.sheet{padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
-.sheet-head{display:flex;justify-content:space-between;align-items:center}
-.sheet-head h3{margin:0;font:900 20px/1.3 var(--display)}
-.field{display:flex;flex-direction:column;gap:5px;min-width:0}
-.field>span{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+dialog.sheet{border:0;padding:0;width:100%;max-width:640px;max-height:92dvh;margin:auto auto 0;border-radius:22px 22px 0 0;background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+@media (min-width:700px){dialog.sheet{margin:auto;border-radius:22px}}
+dialog::backdrop{background:rgba(20,16,12,.45)}
+.sheet form{padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sheet-head h3{font:900 20px/1.3 var(--display);margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:12px 0}
+.field>span,.field>label>span{font-size:13px;color:var(--muted);font-weight:500}
+.field input:not([type=checkbox]):not([type=radio]),.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 10px;font-size:16px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-input,select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;min-width:0}
-textarea{resize:vertical}
-.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.moods label{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:14px;border:1.5px solid var(--line);font-size:12px;cursor:pointer}
-.moods label .e{font-size:26px;line-height:1.1}
-.moods input{position:absolute;opacity:0;pointer-events:none;width:auto}
-.moods label:has(input:checked){border-color:var(--mc);background:color-mix(in srgb,var(--mc) 18%,transparent)}
-.rate{display:flex;gap:4px;flex-direction:row-reverse;justify-content:flex-end}
-.rate input{position:absolute;opacity:0;width:auto}
-.rate label{font-size:28px;color:var(--line);cursor:pointer;line-height:1}
-.rate input:checked~label,.rate label:hover,.rate label:hover~label{color:var(--gold)}
-.song-rows{display:flex;flex-direction:column;gap:10px}
-.song-row{position:relative;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
-.song-row input,.song-row textarea{background:var(--surface)}
-.song-row .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:12px}
-.song-row .hint{font-size:12px;color:var(--muted)}
-.linkbtn{border:0;background:none;color:var(--accent);font-weight:700;padding:4px 0;text-align:left}
-.results{display:flex;flex-direction:column;gap:6px}
-.result{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:6px}
-.result img,.result .noimg{width:36px;height:52px;object-fit:cover;border-radius:3px;background:var(--line)}
-.result div{min-width:0;font-size:13px}
-.sheet-foot{display:flex;gap:8px;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:var(--surface);padding-top:6px}
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;box-shadow:var(--shadow)}
-/* photos */
-.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin-top:10px}
-.photos .ph{border:0;padding:0;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--line)}
-.photos .ph img{width:100%;height:100%;object-fit:cover;display:block}
-.ph-edit{display:flex;flex-wrap:wrap;gap:8px}
-.ph-item,.ph-add{position:relative;width:76px;height:76px;border-radius:12px}
-.ph-item img{width:100%;height:100%;object-fit:cover;border-radius:12px;display:block}
-.ph-item .x{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:11px;padding:0}
-.ph-add{display:grid;place-items:center;border:1.5px dashed var(--line);color:var(--muted);font-size:26px;cursor:pointer}
-#viewer{background:transparent;box-shadow:none;max-width:100%;width:auto;max-height:100vh;margin:auto;border-radius:0}
-#viewer img{max-width:94vw;max-height:88vh;border-radius:14px;display:block}
-.genre-hint{font-size:12px;color:var(--muted)}
-.settings{display:flex;flex-direction:column;gap:12px}
-.settings .panel p{margin:4px 0 10px}
-@media (prefers-reduced-motion:no-preference){.medal:not(.locked) .coin{transition:transform .25s}.medal:not(.locked):hover .coin{transform:rotate(-8deg) scale(1.04)}}
-@media (max-width:380px){.medals{gap:18px 6px}.replay p{font-size:28px}}
+.grid2 .field{margin:6px 0}
+.grid3{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.grid3 .field{margin:6px 0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:14px;color:var(--muted);background:var(--bg)}
+.seg input:checked+span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.mode{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin:6px 0 4px}
+.mode button{flex:1;border:0;background:none;border-radius:9px;padding:7px;font-size:14px;color:var(--muted)}
+.mode button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:var(--shadow)}
+.results{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.result{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px}
+.result img,.result .noimg{width:34px;height:48px;object-fit:cover;border-radius:4px;background:var(--line);flex:none}
+.dup{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13.5px;margin-top:6px}
+.dup:empty{display:none}
+.hint{font-size:12px;color:var(--muted)}
+.sheet-foot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px}
+fieldset.loan{border:1px dashed var(--line);border-radius:12px;padding:4px 12px 10px;margin:14px 0}
+fieldset.loan legend{font-size:13px;color:var(--muted);padding:0 6px}
+.rate{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:2px}
+.rate input{position:absolute;opacity:0;pointer-events:none}
+.rate label{font-size:24px;color:var(--line);cursor:pointer;line-height:1}
+.rate input:checked~label,.rate label:hover,.rate label:hover~label{color:var(--reading)}
+.rate input:focus-visible+label{outline:2px solid var(--accent)}
+
+/* scanner */
+dialog.scan{border:0;padding:0;background:#000;color:#fff;width:100%;max-width:520px;border-radius:20px;overflow:hidden}
+.scan video{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#111}
+.scan .frame{position:absolute;left:12%;right:12%;top:38%;height:22%;border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.scan .bottom{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px}
+.scan .bottom button{border:0;border-radius:10px;padding:8px 14px;background:#fff;color:#000;font-weight:700}
+
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+textarea.bulk{min-height:180px;font-size:15px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top"><h1 id="title">日記</h1><button class="add" id="addBtn" aria-label="新增">＋</button></header>
-  <main id="app"></main>
-</div>
+<div class="wrap" id="app"></div>
+
 <nav class="tabbar"><div class="tabbar-in">
-  <button class="tab" data-tab="diary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>日記</button>
-  <button class="tab" data-tab="books"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h4v15H4zM10 5h4v15h-4zM15.5 6.2l3.8-1 3.4 13.6-3.8 1z"/></svg>書櫃</button>
-  <button class="tab" data-tab="milestones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="6"/><circle cx="12" cy="10" r="2.6"/><path d="M8.5 15 7 21l5-2.5 5 2.5-1.5-6"/></svg>里程碑</button>
+  <button class="tab" data-tab="shelf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h4v15H4zM10 5h4v15h-4zM15.5 6.2l3.8-1 3.4 13.6-3.8 1z"/></svg>書房</button>
+  <button class="tab" data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>讀書計畫</button>
   <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>設定</button>
 </div></nav>
-<dialog id="viewer" aria-label="照片"><img alt=""></dialog>
-<dialog id="sheet"><form id="form" class="sheet" novalidate></form></dialog>
+
+<dialog class="sheet" id="sheet"><form id="form" autocomplete="off" novalidate></form></dialog>
+<dialog class="scan" id="scan" aria-label="掃描條碼">
+  <div style="position:relative"><video id="video" playsinline muted></video><div class="frame"></div></div>
+  <div class="bottom"><span id="scanMsg">對準書背 978 開頭的條碼</span><button type="button" id="scanClose">取消</button></div>
+</dialog>
 
 <script>
-"use strict";
-const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+/* ---------- basics ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'#';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
-const num=n=>Number(n||0).toLocaleString('en-US');
-const fmtDate=s=>{if(!s)return'';const[,m,d]=s.split('-');return `${+m}月${+d}日`};
-const DOW='日一二三四五六';
-const dow=s=>'週'+DOW[new Date(s+'T00:00').getDay()];
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const safeUrl=u=>/^https:\/\//i.test(String(u||'').trim())?String(u).trim():'';
+const norm=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/[\s\p{P}\p{S}]/gu,'');
+const daysSince=d=>d?Math.max(0,Math.floor((Date.now()-new Date(d+'T00:00:00'))/864e5)):0;
+const dateOf=ts=>{const d=new Date(ts);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const zhSort=(a,b)=>String(a).localeCompare(String(b),'zh-Hant-TW-u-co-stroke',{numeric:true});
 
-const MOODS=[
-  {v:1,e:'😭',l:'很糟',c:'var(--m1)'},{v:2,e:'😔',l:'低落',c:'var(--m2)'},{v:3,e:'😐',l:'普通',c:'var(--m3)'},
-  {v:4,e:'🙂',l:'不錯',c:'var(--m4)'},{v:5,e:'🥰',l:'超好',c:'var(--m5)'}];
-const mood=v=>MOODS.find(m=>m.v===+v)||MOODS[2];
-const STATUS={reading:'在讀',finished:'讀完',want:'想讀'};
-
-/* ---------- storage ---------- */
-const KEY='melody-diary-v1';
-let db={entries:[],books:[]};
-try{const raw=localStorage.getItem(KEY);if(raw)db=Object.assign(db,JSON.parse(raw))}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('無法儲存：瀏覽器封鎖了本機儲存空間')}};
-
-/* ---------- photos (IndexedDB; localStorage only keeps the ids) ---------- */
-const PH=new Map();
-const isImg=d=>typeof d==='string'&&/^data:image\/(jpeg|png|webp|gif);base64,/.test(d);
-const idb=new Promise((res,rej)=>{try{const r=indexedDB.open('melody-diary',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
-idb.catch(()=>{});
-const store=(mode,fn)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction('photos',mode);fn(t.objectStore('photos'));t.oncomplete=res;t.onerror=()=>rej(t.error)}));
-const loadPhotos=()=>idb.then(d=>new Promise(res=>{const q=d.transaction('photos').objectStore('photos').openCursor();q.onsuccess=()=>{const c=q.result;if(!c)return res();if(isImg(c.value))PH.set(c.key,c.value);c.continue()};q.onerror=()=>res()})).catch(()=>{});
-const putPhotos=ids=>store('readwrite',s=>ids.forEach(i=>PH.has(i)&&s.put(PH.get(i),i))).catch(()=>toast('照片儲存失敗，空間可能不足'));
-const delPhotos=ids=>{ids.forEach(i=>PH.delete(i));return store('readwrite',s=>ids.forEach(i=>s.delete(i))).catch(()=>{})};
-function shrink(file,max=1280,q=.8){
-  return new Promise((res,rej)=>{const u=URL.createObjectURL(file),img=new Image();
-    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};
-    img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u});
+function isbn13(s){
+  s=String(s||'').replace(/[^0-9Xx]/g,'').toUpperCase();
+  if(s.length===13&&/^\d+$/.test(s))return s;
+  if(s.length===10){const b='978'+s.slice(0,9);let sum=0;for(let i=0;i<12;i++)sum+=+b[i]*(i%2?3:1);return b+((10-sum%10)%10)}
+  return '';
 }
-const photoGrid=ids=>{ids=(ids||[]).filter(i=>PH.has(i));return ids.length?`<div class="photos">${ids.map(i=>`<button type="button" class="ph" data-view="${esc(i)}"><img src="${esc(PH.get(i))}" alt="照片" loading="lazy"></button>`).join('')}</div>`:''};
+const looksIsbn=q=>/^[\d\-\sXx]{10,17}$/.test(q.trim())&&!!isbn13(q);
+
+const STATUS={unread:'未讀',reading:'閱讀中',done:'讀完',dropped:'放棄'};
+const FORMATS={paper:'紙本',readmoo:'讀墨',kobo:'Kobo',kindle:'Kindle',ebook:'其他電子書'};
 
 /* ---------- genres (auto-classified, can be overridden) ---------- */
-// Order matters: specific genres first so "Juvenile Fiction / Mystery" lands in 推理 rather than 小說.
+// Specific genres first, so "Juvenile Fiction / Mystery" lands in 推理 rather than 小說.
 const GENRES=[
-  ['漫畫繪本','#e0803a',['漫畫','繪本','comic','manga','graphic novel','picture book']],
+  ['漫畫','#d9733a',['漫畫','comic','manga','graphic novel','コミック']],
+  ['繪本童書','#e0a33a',['繪本','童書','兒童','picture book','juvenile','children']],
   ['推理懸疑','#45618f',['推理','懸疑','偵探','謀殺','殺人','犯罪','密室','mystery','thriller','crime','detective','suspense']],
   ['奇幻科幻','#7a6c9c',['奇幻','科幻','魔法','fantasy','science fiction','sci-fi','dystopia']],
-  ['愛情','#d6336c',['愛情','戀','romance','love story']],
+  ['愛情','#c9466f',['愛情','戀','romance','love story']],
+  ['輕小說','#d0618c',['輕小說','light novel']],
   ['傳記回憶','#a3803a',['傳記','自傳','回憶錄','biography','memoir','autobiography']],
   ['散文詩集','#9c5a7a',['散文','隨筆','詩','札記','poetry','poems','essays']],
   ['語言學習','#3f7d8c',['英文','日文','韓文','單字','文法','多益','雅思','托福','language arts','foreign language','toeic','ielts']],
   ['電腦科技','#4a6fa5',['程式','電腦','軟體','人工智慧','演算法','數位','computers','programming','technology','python','javascript']],
   ['商業理財','#5b7f4f',['商業','理財','投資','經濟','管理','行銷','創業','財富','股票','職場','領導','business','economics','finance','investing','marketing','management']],
-  ['心理勵志','#c9962b',['心理','勵志','習慣','勇氣','自我','成長','焦慮','情緒','療癒','幸福','正念','self-help','psychology','happiness','habits']],
-  ['哲學思考','#6d6a7c',['哲學','思考','宗教','心靈','倫理','存在','philosophy','ethics']],
+  ['心理勵志','#b88a2b',['心理','勵志','習慣','勇氣','自我','成長','焦慮','情緒','療癒','幸福','正念','self-help','psychology','happiness','habits']],
+  ['哲學宗教','#6d6a7c',['哲學','思考','宗教','心靈','倫理','佛','聖經','philosophy','ethics','religion']],
   ['人文歷史','#b5654f',['歷史','文明','帝國','戰爭','history','civilization']],
   ['社會科學','#5e8c8a',['社會','政治','性別','教育','法律','新聞','social science','political','education','law']],
   ['自然科普','#2f9e4f',['科學','宇宙','物理','生物','演化','數學','大腦','基因','自然','動物','science','physics','biology','mathematics','nature','evolution']],
-  ['藝術設計','#ea5f84',['藝術','設計','攝影','音樂','電影','建築','art','design','photography','music','architecture']],
+  ['藝術設計','#c05a86',['藝術','設計','攝影','音樂','電影','建築','art','design','photography','music','architecture']],
   ['生活風格','#7fa04f',['料理','烹飪','食譜','旅行','旅遊','健康','運動','收納','家居','園藝','寵物','育兒','cooking','travel','health','fitness','gardening','parenting']],
   ['文學小說','#8a5a9c',['小說','文學','物語','fiction','novel','literary','literature']],
 ].map(([k,c,kw])=>({k,c,re:new RegExp(kw.map(w=>/^[\x00-\x7f]+$/.test(w)?`\\b${w}\\b`:w).join('|'),'i')}));
-const OTHER={k:'其他',c:'#8a7fa8'};
-const AUTHOR_GENRE={'東野圭吾':'推理懸疑','宮部美幸':'推理懸疑','湊佳苗':'推理懸疑','阿嘉莎':'推理懸疑','克莉絲蒂':'推理懸疑','Agatha Christie':'推理懸疑','柯南・道爾':'推理懸疑','島田莊司':'推理懸疑','京極夏彥':'推理懸疑',
-  '劉慈欣':'奇幻科幻','羅琳':'奇幻科幻','Rowling':'奇幻科幻','托爾金':'奇幻科幻','Tolkien':'奇幻科幻','艾西莫夫':'奇幻科幻','上橋菜穗子':'奇幻科幻',
-  '村上春樹':'文學小說','太宰治':'文學小說','夏目漱石':'文學小說','川端康成':'文學小說','馬奎斯':'文學小說','卡繆':'文學小說','張愛玲':'文學小說','聖修伯里':'文學小說','吉本芭娜娜':'文學小說','是枝裕和':'文學小說','韓江':'文學小說',
-  '哈拉瑞':'人文歷史','Harari':'人文歷史','岸見一郎':'心理勵志','詹姆斯・克利爾':'心理勵志','James Clear':'心理勵志',
-  '三毛':'散文詩集','余光中':'散文詩集','席慕蓉':'散文詩集','蔣勳':'藝術設計','幾米':'漫畫繪本','尾田榮一郎':'漫畫繪本'};
-// hint = Google Books categories + description saved when the book was picked from search
+const OTHER={k:'其他',c:'#8a7f70'};
+const AUTHOR_GENRE={
+  '尾田榮一郎':'漫畫','鳥山明':'漫畫','青山剛昌':'漫畫','岸本齊史':'漫畫','吾峠呼世晴':'漫畫','諫山創':'漫畫','富樫義博':'漫畫','荒木飛呂彥':'漫畫','井上雄彥':'漫畫','藤本樹':'漫畫','芥見下々':'漫畫','遠藤達哉':'漫畫','高橋留美子':'漫畫','浦澤直樹':'漫畫','荒川弘':'漫畫','藤子・F・不二雄':'漫畫','藤子不二雄':'漫畫','安達充':'漫畫','堀越耕平':'漫畫','山田鐘人':'漫畫','九井諒子':'漫畫','幾米':'繪本童書',
+  '東野圭吾':'推理懸疑','宮部美幸':'推理懸疑','湊佳苗':'推理懸疑','阿嘉莎':'推理懸疑','克莉絲蒂':'推理懸疑','Agatha Christie':'推理懸疑','柯南・道爾':'推理懸疑','島田莊司':'推理懸疑','京極夏彥':'推理懸疑','伊坂幸太郎':'推理懸疑',
+  '劉慈欣':'奇幻科幻','羅琳':'奇幻科幻','Rowling':'奇幻科幻','托爾金':'奇幻科幻','Tolkien':'奇幻科幻','艾西莫夫':'奇幻科幻','上橋菜穗子':'奇幻科幻','喬治・馬汀':'奇幻科幻',
+  '村上春樹':'文學小說','太宰治':'文學小說','夏目漱石':'文學小說','川端康成':'文學小說','馬奎斯':'文學小說','卡繆':'文學小說','張愛玲':'文學小說','聖修伯里':'文學小說','吉本芭娜娜':'文學小說','韓江':'文學小說',
+  '哈拉瑞':'人文歷史','Harari':'人文歷史','岸見一郎':'心理勵志','James Clear':'心理勵志','詹姆斯・克利爾':'心理勵志',
+  '三毛':'散文詩集','余光中':'散文詩集','席慕蓉':'散文詩集','蔣勳':'藝術設計'};
+// hint = categories + description saved when the book was picked from an online search
 function classify(b){
   const author=String(b.author||'');
   for(const[a,g]of Object.entries(AUTHOR_GENRE))if(author.includes(a))return g;
   const [cats='',desc='']=String(b.hint||'').split('\n');
-  for(const text of[`${b.title||''} ${cats}`,desc]){const g=GENRES.find(g=>g.re.test(text));if(g)return g.k}
+  for(const text of[`${b.title||''} ${b.series||''} ${cats}`,desc]){const g=GENRES.find(g=>g.re.test(text));if(g)return g.k}
   return OTHER.k;
 }
 const genreOf=b=>b.genre||classify(b);
 const genreColor=k=>(GENRES.find(g=>g.k===k)||OTHER).c;
 
-const ui={tab:'diary',bookId:null,filter:'reading',genre:'',cal:today().slice(0,7),year:new Date().getFullYear()};
-
-/* ---------- song links ---------- */
-function parseSong(raw){
-  let u;try{u=new URL(String(raw||'').trim())}catch(e){return null}
-  const h=u.hostname.replace(/^(www|m)\./,'');
-  if(h==='open.spotify.com'){
-    const m=u.pathname.match(/\/(track|album|playlist|episode)\/([A-Za-z0-9]+)/);
-    if(m)return{p:'spotify',label:'Spotify',embed:`https://open.spotify.com/embed/${m[1]}/${m[2]}`,h:m[1]==='track'?152:352};
-  }
-  if(h==='music.apple.com'){
-    const song=u.searchParams.has('i')||u.pathname.includes('/song/');
-    return{p:'apple',label:'Apple Music',embed:`https://embed.music.apple.com${u.pathname}${u.search}`,h:song?175:450};
-  }
-  if(['music.youtube.com','youtube.com','youtu.be'].includes(h)){
-    const id=h==='youtu.be'?u.pathname.slice(1):(u.searchParams.get('v')||(u.pathname.match(/\/(?:shorts|embed|live)\/([\w-]+)/)||[])[1]);
-    const label=h==='music.youtube.com'?'YouTube Music':'YouTube';
-    if(id)return{p:'youtube',label,embed:`https://www.youtube-nocookie.com/embed/${id}`,yt:true};
-    const list=u.searchParams.get('list');
-    if(list)return{p:'youtube',label,embed:`https://www.youtube-nocookie.com/embed/videoseries?list=${list}`,yt:true};
-  }
-  return{p:'link',label:'連結'};
+// "哈利波特(1)：神秘的魔法石" / "鬼滅之刃 3" / "航海王 第100集" → {series, vol}. loose=true also accepts a bare trailing number.
+function guessSeries(t,loose){
+  t=String(t||'').trim();let m;
+  if((m=t.match(/^(.+?)\s*[（(]\s*(\d{1,3})\s*[)）]/)))return{series:m[1].trim(),vol:+m[2]};
+  if((m=t.match(/^(.+?)\s*第\s*(\d{1,3})\s*[集卷冊部話]/)))return{series:m[1].trim(),vol:+m[2]};
+  if((m=t.match(/^(.+?)\s*vol\.?\s*(\d{1,3})\b/i)))return{series:m[1].trim(),vol:+m[2]};
+  if(loose&&(m=t.match(/^(.*\D)\s+(\d{1,3})\s*[集卷冊]?$/))&&/[^\d\s]/.test(m[1]))return{series:m[1].trim(),vol:+m[2]};
+  if(loose&&(m=t.match(/^(.*[㐀-鿿぀-ヿ])(\d{1,3})\s*[集卷冊]?$/)))return{series:m[1].trim(),vol:+m[2]};
+  return null;
 }
-function songCard(s,showFeel){
-  const p=parseSong(s.url)||{p:'link',label:''};
-  const sub=[s.artist,p.label].filter(Boolean).join(' · ');
-  return `<div class="song">
-    <button type="button" class="song-play ${p.p}" data-play="${esc(p.embed||'')}" data-yt="${p.yt?1:''}" data-h="${p.h||0}" aria-label="播放 ${esc(s.title)}">${p.embed?'▶':'♪'}</button>
-    <div class="song-meta"><div class="song-title">${esc(s.title||'未命名的歌')}</div><div class="song-sub">${esc(sub)}</div></div>
-    ${s.url?`<a class="song-open" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" aria-label="在 ${esc(p.label)} 開啟">↗</a>`:'<span></span>'}
-    ${showFeel&&s.feeling?`<p class="song-feel">${esc(s.feeling)}</p>`:''}
-    <div class="song-embed"></div></div>`;
-}
-document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-play]');if(!b)return;
-  const box=b.closest('.song').querySelector('.song-embed');
-  if(box.innerHTML){box.innerHTML='';b.textContent='▶';return}
-  if(!b.dataset.play){const a=b.closest('.song').querySelector('a');if(a)window.open(a.href,'_blank','noopener');return}
-  box.innerHTML=`<iframe class="${b.dataset.yt?'yt':''}" ${b.dataset.yt?'':`height="${b.dataset.h}"`} src="${esc(b.dataset.play)}" allow="autoplay; encrypted-media; clipboard-write; fullscreen" loading="lazy"></iframe>`;
-  b.textContent='■';
-});
 
-/* ---------- router ---------- */
-function go(tab,bookId=null){ui.tab=tab;ui.bookId=bookId;location.hash=bookId?'book-'+bookId:tab;render()}
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h.startsWith('book-')){ui.tab='books';ui.bookId=h.slice(5)}else if(['diary','books','milestones','settings'].includes(h)){ui.tab=h;ui.bookId=null}render()});
-$$('.tab').forEach(t=>t.onclick=()=>go(t.dataset.tab));
-$('#addBtn').onclick=()=>ui.tab==='books'?editBook():editEntry();
+/* ---------- storage ---------- */
+const KEY='my-bookroom-v1', OLD_KEY='melody-diary-v1';
+let db={books:[],goal:12,pick:null,migrated:false};
+try{const raw=localStorage.getItem(KEY);if(raw)db=Object.assign(db,JSON.parse(raw))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('無法儲存：瀏覽器封鎖了本機儲存空間')}};
+const getBook=id=>db.books.find(b=>b.id===id);
+const addedDate=b=>b.bought||dateOf(b.added||Date.now());
+
+/* ---------- matching (the "do I already own this?" check) ---------- */
+function matches(b,q){
+  q=q.trim();if(!q)return true;
+  if(looksIsbn(q))return isbn13(b.isbn)===isbn13(q);
+  const nq=norm(q);if(!nq)return true;
+  const hay=norm([b.title,b.author,b.series,b.location,b.note,b.loan?.to].join('|'));
+  if(hay.includes(nq))return true;
+  const nt=norm(b.title);return nt.length>=2&&nq.includes(nt);
+}
+function similar(title,isbn,exceptId){
+  const nt=norm(title),i13=isbn13(isbn);
+  return db.books.filter(b=>{if(b.id===exceptId)return false;
+    if(i13&&isbn13(b.isbn)===i13)return true;
+    const bt=norm(b.title);if(!nt||nt.length<2||!bt)return false;
+    return bt===nt||(nt.length>=3&&bt.includes(nt))||(bt.length>=3&&nt.includes(bt));});
+}
+
+/* ---------- UI state ---------- */
+const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',open:new Set(),online:null};
+function go(tab){ui.tab=tab;location.hash=tab;render();window.scrollTo(0,0)}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.tab)));
+window.addEventListener('hashchange',()=>{const t=location.hash.slice(1);if(t&&t!==ui.tab&&['shelf','plan','settings'].includes(t)){ui.tab=t;render()}});
+{const t=location.hash.slice(1);if(['shelf','plan','settings'].includes(t))ui.tab=t}
 
 function render(){
-  const titles={diary:'日記',books:'書櫃',milestones:'閱讀回顧',settings:'設定'};
-  $('#title').textContent=titles[ui.tab];
-  $('#addBtn').hidden=!['diary','books'].includes(ui.tab)||!!ui.bookId;
   $$('.tab').forEach(t=>t.dataset.tab===ui.tab?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
   const app=$('#app');
-  app.innerHTML=ui.tab==='diary'?viewDiary():ui.tab==='books'?(ui.bookId?viewBook(ui.bookId):viewShelf()):ui.tab==='milestones'?viewMilestones():viewSettings();
-  window.scrollTo(0,0);
+  if(ui.tab==='plan')app.innerHTML=viewPlan();
+  else if(ui.tab==='settings')app.innerHTML=viewSettings();
+  else{app.innerHTML=viewShelf();}
 }
 
-/* ---------- diary ---------- */
-function moodByDate(){const m={};[...db.entries].sort((a,b)=>a.created-b.created).forEach(e=>m[e.date]=e.mood);return m}
-function viewCalendar(){
-  const [y,mo]=ui.cal.split('-').map(Number);
-  const first=new Date(y,mo-1,1).getDay(),days=new Date(y,mo,0).getDate(),md=moodByDate(),t=today();
-  let cells=[...DOW].map(d=>`<div class="cal-dow">${d}</div>`).join('')+'<div></div>'.repeat(first);
-  for(let d=1;d<=days;d++){
-    const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`,m=md[ds];
-    cells+=`<button class="cal-day ${m?'has':''} ${ds===t?'today':''}" style="${m?`--mc:${mood(m).c}`:''}" data-day="${ds}" aria-label="${fmtDate(ds)}${m?' '+mood(m).l:''}">${d}</button>`;
-  }
-  return `<section class="cal"><div class="cal-head"><button class="cal-nav" data-cal="-1" aria-label="上個月">‹</button><b>${y}年${mo}月 心情</b><button class="cal-nav" data-cal="1" aria-label="下個月">›</button></div>
-  <div class="cal-grid">${cells}</div>
-  <div class="cal-legend">${MOODS.map(m=>`<span style="--mc:${m.c}">${m.l}</span>`).join('')}</div></section>`;
+/* ---------- pieces ---------- */
+function coverHtml(b,cls='cover'){
+  const u=safeUrl(b.cover);
+  if(u)return`<img class="${cls}" src="${esc(u)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;spine&quot; style=&quot;--c:${genreColor(genreOf(b))}&quot;>${esc((b.series||b.title||'?').slice(0,1)).replace(/'/g,'')}</span>'">`;
+  return`<span class="spine" style="--c:${genreColor(genreOf(b))}">${esc((b.series||b.title||'?').trim().slice(0,1))}</span>`;
 }
-function viewDiary(){
-  const list=[...db.entries].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
-  let html=viewCalendar();
-  if(!list.some(e=>e.date===today()))html+=`<button class="cta" data-new-entry>今天過得怎麼樣？寫下來，配一首歌 ✍️</button>`;
-  if(!list.length)return html+`<div class="empty"><b>還沒有日記</b>按右上角的 ＋，選個心情、貼一首今天的歌。</div>`;
-  let month='';
-  html+='<div class="list">';
-  for(const e of list){
-    const ym=e.date.slice(0,7);
-    if(ym!==month){month=ym;html+=`</div><h2 class="month">${+ym.slice(0,4)}年${+ym.slice(5)}月</h2><div class="list">`}
-    const m=mood(e.mood);
-    html+=`<article class="entry" style="--mc:${m.c}">
-      <div class="entry-head"><span class="emo" aria-hidden="true">${m.e}</span><div class="d"><div class="entry-date">${fmtDate(e.date)} ${dow(e.date)}</div><div class="small muted">${m.l}</div></div>
-      <button class="icon-btn" data-edit-entry="${e.id}" aria-label="編輯">✎</button></div>
-      ${e.text?`<p class="entry-text">${esc(e.text)}</p>`:''}
-      ${photoGrid(e.photos)}
-      ${e.songs?.length?`<div class="songs">${e.songs.map(s=>songCard(s)).join('')}</div>`:''}
-    </article>`;
-  }
-  return html+'</div>';
+const fmtBadges=b=>`<span class="fmts">${(b.formats||[]).map(f=>`<span class="fmt">${esc(FORMATS[f]||f)}</span>`).join('')}${b.loan?`<span class="fmt loan">借給 ${esc(b.loan.to||'?')}</span>`:''}</span>`;
+const statusPill=b=>`<span class="pill st-${b.status}">${STATUS[b.status]||''}</span>`;
+function bookRow(b){
+  const sub=[b.author,b.location&&(b.formats||[]).includes('paper')?'📍'+b.location:''].filter(Boolean).join(' · ');
+  return`<button class="row" data-edit="${esc(b.id)}">${coverHtml(b)}<span class="meta"><b>${esc(b.title)}</b>${sub?`<span class="sub">${esc(sub)}</span>`:''}${fmtBadges(b)}</span>${statusPill(b)}</button>`;
 }
-document.addEventListener('click',e=>{
-  const t=e.target;
-  if(t.closest('[data-cal]')){const[y,m]=ui.cal.split('-').map(Number);const d=new Date(y,m-1+ +t.closest('[data-cal]').dataset.cal,1);ui.cal=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
-  else if(t.closest('[data-day]')){const ds=t.closest('[data-day]').dataset.day;const ex=[...db.entries].reverse().find(x=>x.date===ds);editEntry(ex?.id,ds)}
-  else if(t.closest('[data-new-entry]'))editEntry();
-  else if(t.closest('[data-edit-entry]'))editEntry(t.closest('[data-edit-entry]').dataset.editEntry);
-  else if(t.closest('[data-filter]')){ui.filter=t.closest('[data-filter]').dataset.filter;ui.genre='';render()}
-  else if(t.closest('[data-genre]')){ui.genre=t.closest('[data-genre]').dataset.genre;render()}
-  else if(t.closest('[data-view]')){const v=$('#viewer');$('img',v).src=PH.get(t.closest('[data-view]').dataset.view)||'';v.showModal()}
-  else if(t.closest('[data-book]'))go('books',t.closest('[data-book]').dataset.book);
-  else if(t.closest('[data-year]')){ui.year=+t.closest('[data-year]').dataset.year;render()}
-});
+const seriesKey=b=>norm(b.series);
+const seriesBooks=key=>db.books.filter(b=>b.series&&seriesKey(b)===key).sort((a,b)=>(a.vol||999)-(b.vol||999)||zhSort(a.title,b.title));
+function seriesCard(key,shown){
+  const all=seriesBooks(key),first=all[0],done=all.filter(b=>b.status==='done').length,open=ui.open.has(key)||!!ui.q;
+  const vols=all.filter(b=>b.vol).map(b=>b.vol),max=Math.max(0,...vols),min=Math.min(...vols,1);
+  let chips='';
+  if(vols.length&&max-min<300){
+    for(let v=min;v<=max;v++){const bs=all.filter(b=>b.vol===v);
+      chips+=bs.length?bs.map(b=>`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-edit="${esc(b.id)}" aria-label="第 ${v} 集，${STATUS[b.status]}">${v}</button>`).join('')
+        :`<span class="vol missing" title="沒有第 ${v} 集">${v}</span>`;}
+  }
+  all.filter(b=>!b.vol).forEach(b=>chips+=`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-edit="${esc(b.id)}" aria-label="${esc(b.title)}">·</button>`);
+  chips+=`<button class="vol next" data-next="${esc(key)}" aria-label="加入下一集">＋${max?max+1:''}</button>`;
+  const missing=vols.length?(max-min+1)-new Set(vols).size:0;
+  return`<div class="series"><button class="row" data-toggle="${esc(key)}" aria-expanded="${open}">${coverHtml(first)}<span class="meta"><b>${esc(first.series)}</b><span class="sub">${esc(first.author||'')}</span><span class="count">共 ${all.length} 本${vols.length?`・到第 ${max} 集`:''}・讀完 ${done}${missing?`・缺 ${missing} 集`:''}</span></span><span class="muted" aria-hidden="true">${open?'▴':'▾'}</span></button>
+    <div class="vols">${chips}</div>
+    ${open?`<div class="inner">${(shown||all).map(bookRow).join('')}</div>`:''}</div>`;
+}
 
-/* ---------- books ---------- */
-const COVERS=['#7a6c9c','#3f7d8c','#b5654f','#5b7f4f','#9c5a7a','#45618f','#a3803a'];
-const coverColor=s=>COVERS[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%COVERS.length];
-const stars=n=>n?'★'.repeat(n)+'☆'.repeat(5-n):'';
-function coverHtml(b,badge=true){
-  const n=(b.songs||[]).length,src=b.cover?safeUrl(b.cover):(b.photos||[]).map(i=>PH.get(i)).find(Boolean);
-  return `<div class="cover" style="--cv:${coverColor(b.title)}">${src?`<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`:`<div class="ph">${esc(b.title)}</div>`}${badge&&n?`<span class="notes">♪ ${n}</span>`:''}</div>`;
+/* ---------- shelf ---------- */
+function filtered(){
+  return db.books.filter(b=>matches(b,ui.q)
+    &&(!ui.status||(ui.status==='loan'?!!b.loan:b.status===ui.status))
+    &&(!ui.fmt||(ui.fmt==='ebook-any'?(b.formats||[]).some(f=>f!=='paper'):(b.formats||[]).includes(ui.fmt)))
+    &&(!ui.genre||genreOf(b)===ui.genre));
+}
+function sortBooks(list){
+  const by={recent:(a,b)=>(b.added||0)-(a.added||0),title:(a,b)=>zhSort(a.series||a.title,b.series||b.title)||(a.vol||0)-(b.vol||0),
+    author:(a,b)=>zhSort(a.author||'~',b.author||'~')||zhSort(a.title,b.title),oldest:(a,b)=>addedDate(a).localeCompare(addedDate(b))};
+  return list.sort(by[ui.sort]||by.recent);
 }
 function viewShelf(){
-  const counts={reading:0,finished:0,want:0};db.books.forEach(b=>counts[b.status]++);
-  const seg=Object.entries({reading:'在讀',finished:'讀完',want:'想讀',all:'全部'}).map(([k,l])=>`<button data-filter="${k}" aria-pressed="${ui.filter===k}">${l} ${k==='all'?db.books.length:counts[k]}</button>`).join('');
-  const byStatus=db.books.filter(b=>ui.filter==='all'||b.status===ui.filter);
-  const gc={};byStatus.forEach(b=>{const g=genreOf(b);gc[g]=(gc[g]||0)+1});
-  if(ui.genre&&!gc[ui.genre])ui.genre='';
-  const chips=Object.keys(gc).length>1?`<div class="seg" role="group" aria-label="類別" style="margin-top:8px"><button data-genre="" aria-pressed="${!ui.genre}">所有類別</button>${Object.entries(gc).sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<button data-genre="${esc(g)}" aria-pressed="${ui.genre===g}">${esc(g)} ${n}</button>`).join('')}</div>`:'';
-  const list=byStatus.filter(b=>!ui.genre||genreOf(b)===ui.genre).sort((a,b)=>(b.finish||b.start||'').localeCompare(a.finish||a.start||''));
-  const shelf=list.length?`<div class="shelf">${list.map(b=>`<button class="book" data-book="${b.id}">${coverHtml(b)}<div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>${b.rating?`<div class="stars">${stars(b.rating)}</div>`:''}</button>`).join('')}</div>`
-    :`<div class="empty"><b>這一格還是空的</b>按 ＋ 加一本書，替它選幾首歌當配樂。</div>`;
-  return `<div class="seg" role="group" aria-label="篩選">${seg}</div>${chips}${shelf}`;
+  const n=db.books.length,count=s=>db.books.filter(b=>b.status===s).length,loans=db.books.filter(b=>b.loan).length;
+  const list=sortBooks(filtered());
+  // group series together, keeping the position of the series' first matching volume
+  const items=[],seen=new Map();
+  for(const b of list){if(b.series){const k=seriesKey(b);if(!seen.has(k)){const g={k,books:[]};seen.set(k,g);items.push(g)}seen.get(k).books.push(b)}else items.push(b)}
+  const genres=[...new Set(db.books.map(genreOf))].sort(zhSort);
+  const chip=(k,v,l)=>`<button class="chip" data-f="${k}" data-v="${v}" aria-pressed="${ui[k]===v}">${l}</button>`;
+  let old=null;try{if(!db.migrated){const o=JSON.parse(localStorage.getItem(OLD_KEY)||'null');if(o?.books?.length)old=o.books.length}}catch(e){}
+  return`<header class="top"><h1>我的書房</h1><button class="add" data-add aria-label="新增書">＋</button></header>
+  ${old?`<div class="banner">舊的「旋律日記」書櫃裡有 <b>${old}</b> 本書，要搬進書房嗎？<div class="acts"><button class="btn sm" data-migrate>搬過來</button><button class="btn sm ghost" data-migrate-no>不用了</button></div></div>`:''}
+  <div class="search"><div class="search-box">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--muted);flex:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="我有這本嗎？書名、作者、ISBN" value="${esc(ui.q)}" enterkeyhint="search">
+    ${ui.q?`<button class="icon-btn" data-clear aria-label="清除">✕</button>`:''}
+    <button class="icon-btn solid" data-scan="home" aria-label="掃描書背條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button>
+  </div></div>
+  <div id="verdict">${verdictHtml(list)}</div>
+  ${ui.q?'':`<div class="stats"><div class="stat"><b>${n}</b><span>全部</span></div><div class="stat"><b>${count('unread')}</b><span>未讀</span></div><div class="stat"><b>${count('reading')}</b><span>閱讀中</span></div><div class="stat"><b>${count('done')}</b><span>讀完</span></div></div>`}
+  ${n?`${ui.q?'':`<div class="chips" role="group" aria-label="狀態">${chip('status','','全部')}${Object.entries(STATUS).map(([k,l])=>chip('status',k,l)).join('')}${loans?chip('status','loan',`借出中 ${loans}`):''}</div>`}
+  ${ui.q?'':`<div class="tools"><select id="fFmt" aria-label="格式"><option value="">所有格式</option><option value="paper" ${ui.fmt==='paper'?'selected':''}>紙本</option><option value="ebook-any" ${ui.fmt==='ebook-any'?'selected':''}>所有電子書</option>${Object.entries(FORMATS).filter(([k])=>k!=='paper').map(([k,l])=>`<option value="${k}" ${ui.fmt===k?'selected':''}>${l}</option>`).join('')}</select>
+    <select id="fGenre" aria-label="類別"><option value="">所有類別</option>${genres.map(g=>`<option ${ui.genre===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
+    <select id="fSort" aria-label="排序">${[['recent','最近加入'],['title','書名'],['author','作者'],['oldest','放最久']].map(([k,l])=>`<option value="${k}" ${ui.sort===k?'selected':''}>${l}</option>`).join('')}</select></div>`}
+  <div class="list">${items.map(it=>it.k!==undefined?seriesCard(it.k,it.books):bookRow(it)).join('')||(ui.q?'':'<div class="empty">沒有符合條件的書</div>')}</div>
+  ${items.some(it=>it.k!==undefined)?`<div class="legend"><span><i class="o" style="--c:var(--unread)"></i>未讀</span><span><i style="--c:var(--reading)"></i>閱讀中</span><span><i style="--c:var(--done)"></i>讀完</span><span><i class="o" style="--c:var(--muted);border-style:dashed"></i>沒有這集</span></div>`:''}`
+  :`<div class="empty"><p>書房還是空的。<br>先掃幾本紙本書的條碼，或到「設定」一次貼上電子書清單。</p><button class="btn" data-add>加第一本書</button> <button class="btn ghost" data-demo>看範例</button></div>`}`;
 }
-function viewBook(id){
-  const b=db.books.find(x=>x.id===id);
-  if(!b)return `<button class="back" onclick="go('books')">‹ 書櫃</button><div class="empty"><b>找不到這本書</b></div>`;
-  const dates=b.status==='finished'?`${b.start?fmtDate(b.start)+' – ':''}${fmtDate(b.finish)} 讀完`:b.start?`${fmtDate(b.start)} 開始`:'';
-  const quotes=(b.quotes||'').split('\n').map(q=>q.trim()).filter(Boolean);
-  return `<button class="back" onclick="go('books')">‹ 書櫃</button>
-  <div class="bd-hero">${coverHtml(b,false)}<div><h2>${esc(b.title)}</h2><div class="muted">${esc(b.author)}</div>
-    <div class="bd-meta"><span class="pill ${b.status}">${STATUS[b.status]}</span><span class="pill" style="border-color:${genreColor(genreOf(b))};color:${genreColor(genreOf(b))}">${esc(genreOf(b))}</span>${b.pages?`<span class="pill">${num(b.pages)} 頁</span>`:''}${dates?`<span class="pill">${dates}</span>`:''}</div>
-    ${b.rating?`<div class="stars" style="font-size:18px;margin-top:6px">${stars(b.rating)}</div>`:''}</div></div>
-  <h2 class="sec">這本書的配樂 <span class="muted small">${(b.songs||[]).length} 首</span></h2>
-  ${b.songs?.length?`<div class="songs">${b.songs.map(s=>songCard(s,true)).join('')}</div>`:`<div class="panel muted">還沒有配樂。哪首歌最像這本書的感覺？</div>`}
-  <h2 class="sec">心得</h2>
-  <div class="panel">${b.review?`<p class="review">${esc(b.review)}</p>`:'<span class="muted">還沒寫心得。</span>'}</div>
-  ${(b.photos||[]).some(i=>PH.has(i))?`<h2 class="sec">照片</h2>${photoGrid(b.photos)}`:''}
-  ${quotes.length?`<h2 class="sec">喜歡的句子</h2><div class="panel">${quotes.map(q=>`<p class="quote">${esc(q)}</p>`).join('')}</div>`:''}
-  <div class="row-actions"><button class="btn" onclick="editBook('${b.id}')">編輯</button></div>`;
+function verdictHtml(list){
+  if(!ui.q.trim())return'';
+  const has=list.length,o=ui.online;
+  let html='';
+  if(has)html=`<div class="verdict have">你已經有 ${has} 本符合「${esc(ui.q)}」<span class="small">先看看下面，別再買一次囉。</span></div>`;
+  else{
+    // an ISBN that matched nothing locally: also try the title we looked up online
+    let extra='';
+    if(o&&o.q===ui.q&&o.title){const t=db.books.filter(b=>matches(b,o.title)||similar(o.title,'',null).includes(b));
+      extra=t.length?`<div class="verdict have" style="margin-top:8px">這個條碼是《${esc(o.title)}》，書房裡有同名的書：<span class="small">${t.map(b=>esc(b.title)+'（'+(b.formats||[]).map(f=>FORMATS[f]).join('、')+'）').join('、')}</span></div>`:''}
+    const loading=o&&o.q===ui.q&&o.loading;
+    html=`<div class="verdict free">書房裡沒有「${esc(o?.q===ui.q&&o.title?o.title:ui.q)}」${loading?'<span class="small">查詢書名中…</span>':'<span class="small">可以放心買。</span>'}<button class="btn sm" data-add-q>加入書房</button></div>${extra}`;
+  }
+  return html;
 }
 
-/* ---------- milestones ---------- */
-const CATS=[
-  {k:'books',label:'讀完的書',unit:'本',th:[1,3,5,10,15,20,30,50,75,100],deco:'rings'},
-  {k:'pages',label:'頁數',unit:'頁',th:[500,1000,2500,5000,7500,10000,15000,25000],deco:'ticks'},
-  {k:'authors',label:'作者',unit:'位',th:[1,3,5,10,15,25,50],deco:'burst'},
-  {k:'genres',label:'類別',unit:'類',th:[1,3,5,8,12],deco:'petals'},
-  {k:'songs',label:'書的配樂',unit:'首',th:[5,10,25,50,100,250],deco:'waves'},
-  {k:'reviews',label:'心得',unit:'篇',th:[1,5,10,25,50],deco:'star'},
-  {k:'diary',label:'日記天數',unit:'天',th:[1,7,30,100,200,365],deco:'dial'},
-  {k:'photos',label:'閱讀照片',unit:'張',th:[1,10,30,100],deco:'frame'},
-];
-const RIMS=[['#b39cf6','#7357d8','#7fd3f7'],['#7fd3f7','#2f7fd6','#f2e27a'],['#7fe0d0','#1f9a8a','#f6e27a'],['#9fe07f','#2f9e4f','#f4d35e'],['#ffd27a','#d9822b','#f27a8a']];
-const splitAuthors=a=>String(a||'').split(/[,，、&\/]| and /).map(s=>s.trim()).filter(Boolean);
-function yearData(y){
-  const inY=d=>!!d&&d.startsWith(String(y));
-  const fin=db.books.filter(b=>b.status==='finished'&&inY(b.finish)).sort((a,b)=>a.finish.localeCompare(b.finish));
-  const ev={books:fin.map(b=>({d:b.finish,n:1})),pages:fin.filter(b=>+b.pages>0).map(b=>({d:b.finish,n:+b.pages})),reviews:fin.filter(b=>(b.review||'').trim()).map(b=>({d:b.finish,n:1})),authors:[]};
-  const seen=new Set();fin.forEach(b=>splitAuthors(b.author).forEach(a=>{if(!seen.has(a)){seen.add(a);ev.authors.push({d:b.finish,n:1})}}));
-  const gs=new Set();ev.genres=[];fin.forEach(b=>{const g=genreOf(b);if(!gs.has(g)){gs.add(g);ev.genres.push({d:b.finish,n:1})}});
-  ev.photos=db.books.flatMap(b=>(b.photos||[]).map(()=>b.finish||b.start)).filter(inY).sort().map(d=>({d,n:1}));
-  ev.songs=db.books.flatMap(b=>(b.songs||[]).map(s=>s.added||b.finish||b.start)).filter(inY).sort().map(d=>({d,n:1}));
-  ev.diary=[...new Set(db.entries.map(e=>e.date).filter(inY))].sort().map(d=>({d,n:1}));
-  return{fin,ev};
-}
-function reach(events,th){let total=0,i=0;const out=th.map(t=>({t,date:null}));for(const e of events){total+=e.n;while(i<th.length&&total>=th[i]){out[i].date=e.d;i++}}return{total,out}}
-const pt=(r,a)=>[(50+r*Math.cos(a)).toFixed(2),(50+r*Math.sin(a)).toFixed(2)];
-function deco(kind,c){
-  const L=(r1,r2,a,w=1.6)=>{const[x1,y1]=pt(r1,a),[x2,y2]=pt(r2,a);return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`};
-  const arc=(r,a1,a2)=>{const[x1,y1]=pt(r,a1),[x2,y2]=pt(r,a2);return `<path d="M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`};
-  const D=Math.PI/180;let s='';
-  if(kind==='ticks'){for(let i=0;i<48;i++){const a=i/48*2*Math.PI-Math.PI/2;if(Math.abs(Math.sin(a))<.28)continue;s+=L(36,36+(i%4===0?10:5),a)}}
-  if(kind==='dial'){for(let i=0;i<30;i++){const a=i/30*2*Math.PI;s+=L(34,40,a,2.2)}}
-  if(kind==='rings'){[44,37,30].forEach((r,i)=>{s+=arc(r,(-150+i*12)*D,(-30-i*12)*D)+arc(r,(30+i*12)*D,(150-i*12)*D)})}
-  if(kind==='waves'){[24,32,40].forEach(r=>{s+=arc(r,-80*D,-20*D)+arc(r,100*D,160*D)})}
-  if(kind==='petals'){for(let i=0;i<6;i++){const[x,y]=pt(30,i/6*2*Math.PI-Math.PI/2);s+=`<circle cx="${x}" cy="${y}" r="12" fill="none" stroke="${c}" stroke-width="1.4"/>`}}
-  if(kind==='frame'){s+=`<rect x="18" y="22" width="64" height="56" rx="10" fill="none" stroke="${c}" stroke-width="1.6"/><path d="M24 70l14-14 10 9 12-13 16 18" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" opacity=".5"/>`}
-  if(kind==='burst'||kind==='star'){const n=kind==='burst'?8:8,ro=kind==='burst'?47:44,ri=kind==='burst'?27:35;let p=[];for(let i=0;i<n*2;i++){const a=i/(n*2)*2*Math.PI-Math.PI/2;p.push(pt(i%2?ri:ro,a).join(','))}s+=`<polygon points="${p.join(' ')}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/>`}
-  return `<svg viewBox="0 0 100 100" aria-hidden="true">${s}</svg>`;
-}
-function medal(cat,m,idx,total){
-  const tier=Math.min(RIMS.length-1,idx),[c1,c2,c3]=RIMS[tier];
-  const locked=!m.date,pct=Math.min(100,total/m.t*100);
-  return `<div class="medal ${locked?'locked':''}" title="${cat.label} ${num(m.t)} ${cat.unit}">
-    <div class="coin" style="--c1:${c1};--c2:${c2};--c3:${c3}"><div class="face">${deco(cat.deco,c2)}<span class="num">${num(m.t)}</span></div></div>
-    <div class="m-date">${locked?`還差 ${num(m.t-total)} ${cat.unit}`:fmtDate(m.date)}</div><div class="m-label">${cat.label}</div>
-    ${locked?`<div class="m-prog"><i style="width:${pct}%"></i></div>`:''}</div>`;
-}
-function viewMilestones(){
-  const y=ui.year;
-  const years=new Set([new Date().getFullYear()]);
-  db.books.forEach(b=>b.finish&&years.add(+b.finish.slice(0,4)));db.entries.forEach(e=>years.add(+e.date.slice(0,4)));
-  const{fin,ev}=yearData(y);
-  const got=[],next=[];
-  CATS.forEach(cat=>{const r=reach(ev[cat.k],cat.th);r.out.forEach((m,i)=>{if(m.date)got.push({cat,m,i,total:r.total})});const n=r.out.findIndex(m=>!m.date);if(n>=0)next.push({cat,m:r.out[n],i:n,total:r.total})});
-  got.sort((a,b)=>b.m.date.localeCompare(a.m.date));
-  next.sort((a,b)=>b.total/b.m.t-a.total/a.m.t);
-  const pages=ev.pages.reduce((s,e)=>s+e.n,0);
-  // rankings
-  const ac={};fin.forEach(b=>splitAuthors(b.author).forEach(a=>ac[a]=(ac[a]||0)+1));
-  const topA=Object.entries(ac).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const sc={};const inY=d=>d&&d.startsWith(String(y));
-  const addSong=(s,d,src)=>{if(!inY(d))return;const k=(s.url||s.title).trim();if(!k)return;sc[k]=sc[k]||{s,n:0,src:new Set()};sc[k].n++;sc[k].src.add(src)};
-  db.entries.forEach(e=>(e.songs||[]).forEach(s=>addSong(s,e.date,'日記')));
-  db.books.forEach(b=>(b.songs||[]).forEach(s=>addSong(s,s.added||b.finish||b.start,'《'+b.title+'》')));
-  const topS=Object.values(sc).sort((a,b)=>b.n-a.n).slice(0,5);
-  const gc={};fin.forEach(b=>{const g=genreOf(b);gc[g]=(gc[g]||0)+1});
-  const topG=Object.entries(gc).sort((a,b)=>b[1]-a[1]);
-  const months=Array(12).fill(0);fin.forEach(b=>months[+b.finish.slice(5,7)-1]++);const mx=Math.max(1,...months);
-  const ent=db.entries.filter(e=>inY(e.date));const mc=MOODS.map(m=>ent.filter(e=>+e.mood===m.v).length);
-  const topBook=[...fin].sort((a,b)=>(b.rating||0)-(a.rating||0)||(b.songs||[]).length-(a.songs||[]).length)[0];
-  return `<div class="years">${[...years].sort((a,b)=>b-a).map(v=>`<div class="seg"><button data-year="${v}" aria-pressed="${v===y}">${v}</button></div>`).join('')}</div>
-  <section class="replay"><p>你在 ${y} 年讀了 <b>${num(pages)}</b> 頁，讀完 <b>${fin.length}</b> 本書。</p>
-   <div class="sub">寫了 ${ev.diary.length} 天日記 · 替書配了 ${ev.songs.length} 首歌${topBook?` · 年度之書《${esc(topBook.title)}》`:''}</div></section>
-  <h2 class="sec">里程碑 <span class="muted small">${got.length} 枚</span></h2>
-  <div class="medals">${got.map(g=>medal(g.cat,g.m,g.i,g.total)).join('')}${next.map(g=>medal(g.cat,g.m,g.i,g.total)).join('')}</div>
-  <h2 class="sec">年度排行</h2>
-  <div class="stats">
-   <div class="panel"><b>最常讀的作者</b>${topA.length?`<ol class="rank" style="margin-top:10px">${topA.map(([a,n],i)=>`<li><span class="n">${i+1}</span><span>${esc(a)}</span><span class="v">${n} 本</span></li>`).join('')}</ol>`:'<p class="muted small">讀完一本書後就會出現。</p>'}</div>
-   <div class="panel"><b>讀過的類別</b> <span class="muted small">${topG.length} 類</span>${topG.length?`<div class="moodbar">${topG.map(([g,n])=>`<i style="--mc:${genreColor(g)};width:${n/fin.length*100}%" title="${esc(g)} ${n}"></i>`).join('')}</div><div class="cal-legend">${topG.map(([g,n])=>`<span style="--mc:${genreColor(g)}">${esc(g)} ${n}</span>`).join('')}</div>`:'<p class="muted small">讀完一本書後，會自動幫它分類。</p>'}</div>
-   <div class="panel"><b>年度之歌</b>${topS.length?`<ol class="rank" style="margin-top:10px">${topS.map((x,i)=>`<li><span class="n">${i+1}</span><span>${esc(x.s.title||'未命名')}<br><span class="v">${esc([x.s.artist,[...x.src].slice(0,2).join('、')].filter(Boolean).join(' · '))}</span></span><span class="v">${x.n} 次</span></li>`).join('')}</ol>`:'<p class="muted small">在日記或書裡加歌後就會出現。</p>'}</div>
-   <div class="panel"><b>每月讀完</b><div class="bars">${months.map((n,i)=>`<div title="${i+1}月 ${n} 本"><i style="height:${n/mx*70}px"></i><span>${i+1}</span></div>`).join('')}</div></div>
-   <div class="panel"><b>心情分布</b> <span class="muted small">${ent.length} 篇日記</span>
-     <div class="moodbar">${ent.length?MOODS.map((m,i)=>mc[i]?`<i style="--mc:${m.c};width:${mc[i]/ent.length*100}%" title="${m.l} ${mc[i]}"></i>`:'').join(''):''}</div>
-     <div class="cal-legend">${MOODS.map((m,i)=>`<span style="--mc:${m.c}">${m.e} ${mc[i]}</span>`).join('')}</div></div>
-  </div>`;
+/* ---------- plan (nudges) ---------- */
+function viewPlan(){
+  const y=String(new Date().getFullYear());
+  const unread=db.books.filter(b=>b.status==='unread'),reading=db.books.filter(b=>b.status==='reading');
+  const doneY=db.books.filter(b=>b.status==='done'&&(b.finished||'').startsWith(y)).length;
+  const boughtY=db.books.filter(b=>addedDate(b).startsWith(y)).length;
+  const goal=Math.max(1,+db.goal||12),pct=Math.min(100,Math.round(doneY/goal*100));
+  const month=new Date().getMonth()+1,expected=Math.round(goal*month/12);
+  let nudge='';
+  if(doneY>=goal)nudge=`🎉 今年的目標達成了！`;
+  else if(doneY>=expected)nudge=`進度超前，照這樣下去年底可以讀完 ${Math.round(doneY/month*12)} 本。`;
+  else nudge=`照目標，到這個月應該讀完 ${expected} 本，還差 ${expected-doneY} 本。`;
+  const diff=boughtY-doneY;
+  const buyNote=boughtY?(diff>0?`今年買了 ${boughtY} 本、讀完 ${doneY} 本，未讀的書多了 ${diff} 本 😅`:`今年買了 ${boughtY} 本、讀完 ${doneY} 本，讀得比買得多 👍`):'';
+  const pick=db.pick&&getBook(db.pick.id);const pickOk=pick&&pick.status==='unread';
+  const oldest=[...unread].sort((a,b)=>addedDate(a).localeCompare(addedDate(b))).slice(0,5);
+  const loans=db.books.filter(b=>b.loan);
+  const weeks=unread.length;
+  return`<header class="top"><h1>讀書計畫</h1></header>
+  <div class="card"><div class="muted small">已買還沒讀</div><div class="big">${unread.length}<span style="font-size:18px"> 本</span></div>
+    <div class="nudge muted">${weeks?`一週讀一本，要 ${weeks>=52?(weeks/52).toFixed(1)+' 年':weeks+' 週'}才讀得完。`:'沒有未讀的書，太厲害了！'}</div></div>
+
+  <h2 class="sec">今天讀哪一本？</h2>
+  <div class="card">${unread.length?(pickOk?`<div class="pick">${coverHtml(pick)}<div class="meta"><h3>${esc(pick.title)}</h3><div class="muted small">${esc(pick.author||'')}${pick.author?' · ':''}${(pick.formats||[]).map(f=>FORMATS[f]).join('、')}</div><div class="muted small">已經放了 ${daysSince(addedDate(pick))} 天${pick.location?` · 📍${esc(pick.location)}`:''}</div></div></div>
+      <div class="btns"><button class="btn" data-start="${esc(pick.id)}">就讀這本</button><button class="btn ghost" data-pick>換一本</button></div>`
+    :`<p style="margin:0 0 4px">從 ${unread.length} 本未讀的書裡，隨機幫你挑一本。</p><div class="btns"><button class="btn" data-pick>幫我挑</button></div>`)
+    :'<p class="muted" style="margin:0">沒有未讀的書可以挑。</p>'}</div>
+
+  <h2 class="sec">閱讀中 <small>${reading.length} 本</small></h2>
+  <div class="card">${reading.length?reading.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">${b.started?`${daysSince(b.started)} 天前開始`:''}</span></button><button class="btn sm" data-finish="${esc(b.id)}">讀完了</button></div>`).join(''):'<p class="muted" style="margin:0">現在沒有在讀的書。挑一本開始吧！</p>'}</div>
+
+  <h2 class="sec">${y} 年目標 <small>${doneY} / ${goal} 本</small></h2>
+  <div class="card"><div class="bar"><i style="width:${pct}%"></i></div><div class="nudge">${nudge}</div>${buyNote?`<div class="nudge muted">${buyNote}</div>`:''}<div class="small muted" style="margin-top:6px">目標可以在「設定」改。</div></div>
+
+  ${oldest.length?`<h2 class="sec">放最久的未讀</h2><div class="card">${oldest.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">放了 ${daysSince(addedDate(b))} 天 · ${(b.formats||[]).map(f=>FORMATS[f]).join('、')}</span></button><button class="btn sm ghost" data-start="${esc(b.id)}">開始讀</button></div>`).join('')}</div>`:''}
+
+  ${loans.length?`<h2 class="sec">借出中</h2><div class="card">${loans.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">借給 ${esc(b.loan.to||'?')}${b.loan.date?` · ${daysSince(b.loan.date)} 天`:''}</span></button><button class="btn sm ghost" data-return="${esc(b.id)}">還了</button></div>`).join('')}</div>`:''}`;
 }
 
 /* ---------- settings ---------- */
 function viewSettings(){
-  return `<div class="settings">
-   <div class="panel"><b>資料存在哪裡？</b><p class="muted small">所有日記和書都只存在這台裝置的瀏覽器裡，不會上傳。換手機或清除瀏覽器資料前，記得先匯出備份。</p></div>
-   <div class="panel"><b>備份</b><p class="muted small">目前有 ${db.entries.length} 篇日記、${db.books.length} 本書、${PH.size} 張照片（照片也會一起備份）。</p>
-     <div class="row-actions" style="margin-top:0;flex-wrap:wrap"><button class="btn" id="exportBtn">匯出 JSON</button><label class="btn ghost" for="importFile">匯入 JSON</label><input type="file" id="importFile" accept="application/json,.json" hidden></div></div>
-   <div class="panel"><b>書籍搜尋</b><p class="muted small">搜尋會同時查 Apple Books、Google Books 和 Open Library。Google Books 不填金鑰時常常額度用完；想讓它更穩，可以到 Google Cloud 免費申請一組 Books API 金鑰貼在這裡（只存在這台裝置）。</p>
-     <input id="gbKey" placeholder="Google Books API 金鑰（選填）" value="${esc(gbKey())}" autocomplete="off"></div>
-   <div class="panel"><b>範例資料</b><p class="muted small">想先看看里程碑長什麼樣子？載入幾篇範例日記和書（會加在現有資料後面）。</p><button class="btn ghost" id="demoBtn">載入範例</button></div>
-   <div class="panel"><b>清除全部</b><p class="muted small">刪除這台裝置上的所有日記和書，無法復原。</p><button class="btn danger" id="clearBtn">清除全部資料</button></div>
+  let old=0;try{const o=JSON.parse(localStorage.getItem(OLD_KEY)||'null');old=o?.books?.length||0}catch(e){}
+  return`<header class="top"><h1>設定</h1></header>
+  <div class="card set">
+    <div class="line-item"><span>今年想讀完幾本</span><input type="number" id="goal" min="1" max="999" inputmode="numeric" value="${esc(db.goal)}"></div>
+    <div class="line-item"><span>一次貼上書單<br><span class="small muted">讀墨、Kobo、Kindle 的書名清單</span></span><button class="btn sm ghost" data-bulk>貼上</button></div>
+    <div class="line-item"><span>一次加一整套<br><span class="small muted">漫畫、系列小說</span></span><button class="btn sm ghost" data-set>新增</button></div>
+  </div>
+  <h2 class="sec">備份</h2>
+  <div class="card set">
+    <div class="line-item"><span>匯出備份（JSON）</span><button class="btn sm ghost" data-export>匯出</button></div>
+    <div class="line-item"><span>匯出試算表（CSV）</span><button class="btn sm ghost" data-csv>匯出</button></div>
+    <div class="line-item"><span>從備份還原</span><label class="btn sm ghost">選擇檔案<input type="file" id="importFile" accept="application/json,.json" hidden></label></div>
+    ${old?`<div class="line-item"><span>從舊的「旋律日記」搬書（${old} 本）</span><button class="btn sm ghost" data-migrate>搬過來</button></div>`:''}
+  </div>
+  <p class="small muted">資料只存在這台手機的瀏覽器裡，不會上傳到任何地方。換手機或清除 Safari 資料前，記得先匯出備份。</p>
+  <h2 class="sec">其他</h2>
+  <div class="card set">
+    <div class="line-item"><span>搜尋書籍資料用的 Google Books 金鑰（選填）</span></div>
+    <input id="gbKey" placeholder="沒有也可以用" value="${esc(gbKey())}" style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;margin-bottom:8px">
+    <div class="line-item"><span>載入範例書</span><button class="btn sm ghost" data-demo>載入</button></div>
+    <div class="line-item"><span style="color:var(--warn)">清空整個書房</span><button class="btn sm danger" data-wipe>清空</button></div>
   </div>`;
 }
-document.addEventListener('click',e=>{
-  if(e.target.id==='exportBtn'){
-    const blob=new Blob([JSON.stringify({...db,photos:Object.fromEntries(PH)})],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`melody-diary-${today()}.json`;a.click();toast('已匯出備份');
-  }
-  if(e.target.id==='demoBtn'){loadDemo();toast('已載入範例');go('milestones')}
-  if(e.target.id==='clearBtn'){
-    if(e.target.dataset.confirm){db={entries:[],books:[]};save();delPhotos([...PH.keys()]);toast('已清除');render()}
-    else{e.target.dataset.confirm=1;e.target.textContent='再按一次確認清除'}
-  }
+
+/* ---------- events on the page ---------- */
+const app=$('#app');
+app.addEventListener('input',e=>{
+  if(e.target.id==='q'){ui.q=e.target.value;ui.online=null;refreshShelf();return}
+  if(e.target.id==='goal'){db.goal=Math.max(1,+e.target.value||12);save();return}
+  if(e.target.id==='gbKey'){try{localStorage.setItem(GB_KEY,e.target.value.trim())}catch(err){}}
 });
-document.addEventListener('change',e=>{
-  if(e.target.id==='gbKey'){try{localStorage.setItem(GB_KEY,e.target.value.trim())}catch(err){}toast('已儲存金鑰');return}
-  if(e.target.id!=='importFile')return;const f=e.target.files[0];if(!f)return;
-  f.text().then(t=>{const d=JSON.parse(t);if(!Array.isArray(d.entries)||!Array.isArray(d.books))throw 0;
-    const ids=new Set([...db.entries,...db.books].map(x=>x.id));
-    db.entries.push(...d.entries.filter(x=>!ids.has(x.id)));db.books.push(...d.books.filter(x=>!ids.has(x.id)));save();
-    const ph=Object.entries(d.photos||{}).filter(([i,v])=>isImg(v)&&!PH.has(i));ph.forEach(([i,v])=>PH.set(i,v));putPhotos(ph.map(([i])=>i));
-    toast('匯入完成');render()})
-   .catch(()=>toast('這個檔案不是旋律日記的備份'));
+app.addEventListener('keydown',e=>{if(e.target.id==='q'&&e.key==='Enter'){e.target.blur();if(looksIsbn(ui.q))lookupIsbnForHome(ui.q)}});
+app.addEventListener('change',e=>{
+  const id=e.target.id;
+  if(id==='fFmt'){ui.fmt=e.target.value;render()}
+  else if(id==='fGenre'){ui.genre=e.target.value;render()}
+  else if(id==='fSort'){ui.sort=e.target.value;render()}
+  else if(id==='importFile')importJson(e.target.files[0]);
+});
+// Re-render the shelf without losing focus/caret in the search box
+function refreshShelf(){
+  const inp=$('#q'),pos=inp?.selectionStart;render();
+  const n=$('#q');if(n&&document.activeElement!==n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}
+}
+app.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-edit]');if(!t)return;
+  const d=t.dataset;
+  if(d.edit)return editBook(d.edit);
+  if(d.toggle!==undefined){ui.open.has(d.toggle)?ui.open.delete(d.toggle):ui.open.add(d.toggle);return render()}
+  if(d.next!==undefined)return addNext(d.next);
+  if(d.f){ui[d.f]=ui[d.f]===d.v&&d.v?'':d.v;return render()}
+  if('add'in d)return editBook(null);
+  if('addQ'in d){const o=ui.online;return editBook(null,looksIsbn(ui.q)?{isbn:isbn13(ui.q),title:o?.title||'',author:o?.author||'',cover:o?.cover||'',pages:o?.pages||'',hint:o?.hint||''}:{title:ui.q.trim()})}
+  if('clear'in d){ui.q='';ui.online=null;return render()}
+  if(d.scan)return startScan(d.scan);
+  if('pick'in d){const u=db.books.filter(b=>b.status==='unread'&&b.id!==db.pick?.id);const pool=u.length?u:db.books.filter(b=>b.status==='unread');
+    // favour books that have waited longer: weight by days on the shelf
+    const w=pool.map(b=>1+Math.sqrt(daysSince(addedDate(b))));let r=Math.random()*w.reduce((a,b)=>a+b,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;
+    db.pick={id:pool[i].id,date:today()};save();return render()}
+  if(d.start){const b=getBook(d.start);b.status='reading';b.started=b.started||today();if(db.pick?.id===b.id)db.pick=null;save();toast(`開始讀《${b.title}》，加油！`);return render()}
+  if(d.finish){const b=getBook(d.finish);b.status='done';b.finished=today();save();toast(`讀完《${b.title}》🎉`);return render()}
+  if(d.return){const b=getBook(d.return);b.loan=null;save();toast('已歸還');return render()}
+  if('migrate'in d)return migrate();
+  if('migrateNo'in d){db.migrated=true;save();return render()}
+  if('bulk'in d)return openBulk();
+  if('set'in d)return openSet();
+  if('export'in d)return download(`我的書房-${today()}.json`,JSON.stringify({app:'my-bookroom',version:1,...db},null,1),'application/json');
+  if('csv'in d)return exportCsv();
+  if('demo'in d)return loadDemo();
+  if('wipe'in d){if(confirm(`確定要刪除全部 ${db.books.length} 本書嗎？建議先匯出備份。`)){db.books=[];db.pick=null;save();toast('已清空');render()}}
 });
 
-/* ---------- editors ---------- */
-const sheet=$('#sheet'),form=$('#form');
-function songRow(s={},feel){
-  return `<div class="song-row" data-added="${esc(s.added||today())}">
-    <button type="button" class="x" data-del-song aria-label="移除這首歌">✕</button>
-    <input name="s_url" placeholder="貼上 Apple Music / Spotify / YouTube Music 連結" value="${esc(s.url)}" inputmode="url" autocomplete="off">
-    <div class="grid2"><input name="s_title" placeholder="歌名" value="${esc(s.title)}"><input name="s_artist" placeholder="歌手" value="${esc(s.artist)}"></div>
-    ${feel?`<textarea name="s_feel" rows="2" placeholder="為什麼是這首？它讓你想到書裡的哪一段？">${esc(s.feeling)}</textarea>`:''}
-  </div>`;
-}
-const songBlock=(songs,feel)=>`<div class="field"><span>${feel?'這本書的配樂':'今天的歌'}</span><div class="song-rows" data-feel="${feel?1:''}">${(songs.length?songs:[{}]).map(s=>songRow(s,feel)).join('')}</div><button type="button" class="linkbtn" data-add-song>＋ 再加一首</button></div>`;
-const photoItem=id=>`<div class="ph-item" data-pid="${esc(id)}"><img src="${esc(PH.get(id)||'')}" alt=""><button type="button" class="x" data-del-photo aria-label="移除照片">✕</button></div>`;
-const photoBlock=(ids,label)=>`<div class="field"><span>${label}</span><div class="ph-edit">${(ids||[]).filter(i=>PH.has(i)).map(photoItem).join('')}<label class="ph-add" aria-label="加照片">＋<input type="file" accept="image/*" multiple hidden data-photo-input></label></div></div>`;
-const readPhotos=()=>$$('.ph-item',form).map(x=>x.dataset.pid);
-const readSongs=()=>$$('.song-row',form).map(r=>({url:$('[name=s_url]',r).value.trim(),title:$('[name=s_title]',r).value.trim(),artist:$('[name=s_artist]',r).value.trim(),feeling:($('[name=s_feel]',r)?.value||'').trim(),added:r.dataset.added})).filter(s=>s.url||s.title);
-form.addEventListener('click',e=>{
-  if(e.target.closest('[data-add-song]')){const box=$('.song-rows',form);box.insertAdjacentHTML('beforeend',songRow({},!!box.dataset.feel));$$('[name=s_url]',box).pop().focus()}
-  if(e.target.closest('[data-del-song]'))e.target.closest('.song-row').remove();
-  if(e.target.closest('[data-del-photo]'))e.target.closest('.ph-item').remove();
-  if(e.target.closest('[data-close]'))sheet.close();
-  const r=e.target.closest('[data-pick]');if(r){const v=form._results[+r.dataset.pick];
-    form.elements.title.value=v.title;form.author.value=v.author;if(v.pages)form.pages.value=v.pages;if(v.cover)form.cover.value=v.cover;form.hint.value=v.hint;updateGenreHint();$('.results',form).innerHTML=''}
-  if(e.target.closest('[data-search]'))searchBooks();
-  if(e.target.closest('[data-delete]')){const b=e.target.closest('[data-delete]');
-    if(!b.dataset.confirm){b.dataset.confirm=1;b.textContent='再按一次刪除';return}
-    const{kind,id}=form.dataset;delPhotos((db[kind==='entry'?'entries':'books'].find(x=>x.id===id)?.photos)||[]);db[kind==='entry'?'entries':'books']=db[kind==='entry'?'entries':'books'].filter(x=>x.id!==id);save();sheet.close();toast('已刪除');kind==='book'?go('books'):render()}
-});
-form.addEventListener('change',async e=>{
-  if(e.target.name==='s_url')autofill(e.target.closest('.song-row'));
-  if(e.target.matches('[data-photo-input]')){
-    const add=e.target.closest('.ph-add');
-    for(const f of e.target.files){try{const id='p'+uid();PH.set(id,await shrink(f));form._added.push(id);add.insertAdjacentHTML('beforebegin',photoItem(id))}catch(err){toast('這張照片讀不出來')}}
-    e.target.value='';
-  }
-});
-form.addEventListener('input',e=>{if(['title','author'].includes(e.target.name))updateGenreHint()});
-function updateGenreHint(){const o=form.genre?.querySelector('option[value=""]');if(o)o.textContent=`自動：${classify({title:form.elements.title.value,author:form.author.value,hint:form.hint.value})}`}
-// photos added in a sheet that was closed without saving are thrown away
-sheet.addEventListener('close',()=>{if(!form._saved)form._added.forEach(i=>PH.delete(i))});
-async function autofill(row){
-  const url=$('[name=s_url]',row).value.trim(),t=$('[name=s_title]',row),a=$('[name=s_artist]',row);
-  if(!url||t.value)return;
-  try{const r=await fetch('https://noembed.com/embed?url='+encodeURIComponent(url));const j=await r.json();
-    if(j.title&&!t.value)t.value=j.title;if(j.author_name&&!a.value)a.value=j.author_name.replace(/ - Topic$/,'')}catch(e){}
-  if(!t.value){try{const u=new URL(url);const parts=u.pathname.split('/');if(u.hostname==='music.apple.com'&&parts[2]==='song'&&parts[3])t.value=decodeURIComponent(parts[3]).replace(/-/g,' ')}catch(e){}}
-}
-// Search several catalogues at once. Google Books has the best Chinese coverage but keyless calls share one
-// exhausted quota, so it only really works once the user pastes their own key in 設定.
-const GB_KEY='melody-diary-gbkey';
-const gbKey=()=>{try{return localStorage.getItem(GB_KEY)||''}catch(e){return''}};
+/* ---------- online lookup ---------- */
+const GB_KEY='my-bookroom-gbkey';
+const gbKey=()=>{try{return localStorage.getItem(GB_KEY)||localStorage.getItem('melody-diary-gbkey')||''}catch(e){return''}};
 const stripTags=t=>String(t||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 function jsonp(url,ms=8000){
   return new Promise((res,rej)=>{
-    const cb='_jp'+uid(),sc=document.createElement('script');
+    const cb='_jp'+uid().replace(/\W/g,''),sc=document.createElement('script');
     const done=(f,v)=>{window[cb]=()=>{};sc.remove();clearTimeout(t);f(v)};
     const t=setTimeout(()=>done(rej,new Error('timeout')),ms);
     window[cb]=d=>done(res,d);sc.onerror=()=>done(rej,new Error('jsonp'));
@@ -627,111 +532,287 @@ function jsonp(url,ms=8000){
 }
 const getJson=async url=>{const r=await fetch(url,AbortSignal.timeout?{signal:AbortSignal.timeout(8000)}:{});if(!r.ok)throw new Error(r.status);return r.json()};
 const SOURCES=[
-  async q=>((await getJson(`https://www.googleapis.com/books/v1/volumes?maxResults=6&q=${encodeURIComponent(q)}${gbKey()?'&key='+encodeURIComponent(gbKey()):''}`)).items||[]).map(it=>{const v=it.volumeInfo||{};return{
+  async q=>{const isb=looksIsbn(q)?isbn13(q):'';
+    return((await getJson(`https://www.googleapis.com/books/v1/volumes?maxResults=6&q=${encodeURIComponent(isb?'isbn:'+isb:q)}${gbKey()?'&key='+encodeURIComponent(gbKey()):''}`)).items||[]).map(it=>{const v=it.volumeInfo||{};return{
     title:v.title+(v.subtitle?'：'+v.subtitle:''),author:(v.authors||[]).join('、'),pages:v.pageCount||'',cover:(v.imageLinks?.thumbnail||'').replace(/^http:/,'https:'),
-    hint:`${(v.categories||[]).join(' / ')}\n${(v.description||'').slice(0,400).replace(/\n/g,' ')}`}}),
+    isbn:isbn13((v.industryIdentifiers||[]).find(x=>x.type==='ISBN_13')?.identifier||(v.industryIdentifiers||[]).find(x=>x.type==='ISBN_10')?.identifier||''),
+    hint:`${(v.categories||[]).join(' / ')}\n${(v.description||'').slice(0,400).replace(/\n/g,' ')}`}})},
   async q=>(await jsonp(`https://itunes.apple.com/search?media=ebook&country=tw&limit=8&term=${encodeURIComponent(q)}`)).results.map(v=>({
-    title:v.trackName,author:v.artistName||'',pages:'',cover:(v.artworkUrl100||'').replace('100x100bb','600x600bb'),
+    title:v.trackName,author:v.artistName||'',pages:'',cover:(v.artworkUrl100||'').replace('100x100bb','600x600bb'),isbn:'',
     hint:`${(v.genres||[]).join(' / ')}\n${stripTags(v.description).slice(0,400)}`})),
-  async q=>((await getJson(`https://openlibrary.org/search.json?limit=6&fields=title,author_name,number_of_pages_median,cover_i,subject&q=${encodeURIComponent(q)}`)).docs||[]).map(v=>({
+  async q=>{const isb=looksIsbn(q)?isbn13(q):'';
+    return((await getJson(`https://openlibrary.org/search.json?limit=6&fields=title,author_name,number_of_pages_median,cover_i,subject,isbn&${isb?'isbn='+isb:'q='+encodeURIComponent(q)}`)).docs||[]).map(v=>({
     title:v.title,author:(v.author_name||[]).join('、'),pages:v.number_of_pages_median||'',cover:v.cover_i?`https://covers.openlibrary.org/b/id/${v.cover_i}-M.jpg`:'',
-    hint:`${(v.subject||[]).slice(0,8).join(' / ')}\n`})),
+    isbn:isb||isbn13((v.isbn||[]).find(x=>x.length===13)||''),hint:`${(v.subject||[]).slice(0,8).join(' / ')}\n`}))},
 ];
-async function searchBooks(){
-  const q=form.q.value.trim(),box=$('.results',form);if(!q)return;
-  box.innerHTML='<span class="muted small">搜尋中…</span>';
+async function lookup(q){
   const lists=await Promise.all(SOURCES.map(f=>f(q).catch(()=>null)));
   const seen=new Set();
-  form._results=lists.flat().filter(v=>{if(!v?.title)return false;const k=(v.title+'|'+v.author).toLowerCase().replace(/\s/g,'');if(seen.has(k))return false;seen.add(k);return true}).slice(0,10);
-  if(!form.elements.title.value)form.elements.title.value=q;
-  box.innerHTML=form._results.length?form._results.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${v.cover?`<img src="${esc(safeUrl(v.cover))}" alt="">`:'<span class="noimg"></span>'}<div><b>${esc(v.title)}</b><br><span class="muted">${esc(v.author)}${v.pages?' · '+v.pages+' 頁':''}</span></div></button>`).join('')
-    :`<span class="muted small">${lists.every(l=>l===null)?'連不上書籍資料庫（檢查一下網路）。':'找不到這本書。'}已先把書名填好，其他手動填也可以。</span>`;
+  const out=lists.flat().filter(v=>{if(!v?.title||v.title==='undefined')return false;const k=norm(v.title+'|'+v.author);if(seen.has(k))return false;seen.add(k);return true}).slice(0,10);
+  out.failed=lists.every(l=>l===null);return out;
+}
+async function lookupIsbnForHome(code){
+  if(db.books.some(b=>isbn13(b.isbn)===isbn13(code)))return;
+  ui.online={q:ui.q,loading:true};$('#verdict')&&($('#verdict').innerHTML=verdictHtml(filtered()));
+  const r=await lookup(isbn13(code));if(ui.q!==code)return;
+  ui.online={q:code,...(r[0]||{}),loading:false};
+  if(ui.tab==='shelf'&&$('#verdict'))$('#verdict').innerHTML=verdictHtml(filtered());
+}
+
+/* ---------- editor sheet ---------- */
+const sheet=$('#sheet'),form=$('#form');
+function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form.innerHTML=html;sheet.showModal();form.scrollTop=0}
+sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});
+const seriesList=()=>[...new Set(db.books.map(b=>b.series).filter(Boolean))].sort(zhSort);
+const locList=()=>[...new Set(db.books.map(b=>b.location).filter(Boolean))].sort(zhSort);
+const genreOptions=(b,auto)=>`<option value="">自動：${esc(auto)}</option>${[...GENRES,OTHER].map(g=>`<option ${b.genre&&!b.genreAuto&&b.genre===g.k?'selected':''}>${g.k}</option>`).join('')}`;
+const fmtChecks=sel=>`<div class="seg">${Object.entries(FORMATS).map(([k,l])=>`<label><input type="checkbox" name="fmt" value="${k}" ${sel.includes(k)?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
+const statusSeg=(cur,name='status')=>`<div class="seg">${Object.entries(STATUS).map(([k,l])=>`<label><input type="radio" name="${name}" value="${k}" ${cur===k?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
+const closeBtn=`<button type="button" class="icon-btn" data-close aria-label="關閉">✕</button>`;
+
+function editBook(id,preset={}){
+  const b=getBook(id)||{title:'',author:'',series:'',vol:'',formats:['paper'],status:'unread',bought:today(),finished:'',started:'',location:'',isbn:'',cover:'',pages:'',rating:0,note:'',genre:'',hint:'',loan:null,...preset};
+  openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯':'加一本書'}</h3>${closeBtn}</div>
+   ${id?'':`<div class="mode"><button type="button" aria-pressed="true">一本</button><button type="button" data-set aria-pressed="false">一整套</button><button type="button" data-bulk aria-pressed="false">貼上清單</button></div>
+   <div class="field"><span>搜尋書名或 ISBN，自動帶入作者、封面</span><div class="search-row"><input name="q" placeholder="例如：被討厭的勇氣" enterkeyhint="search" value="${esc(preset.isbn||'')}"><button type="button" class="icon-btn solid" data-scan="sheet" aria-label="掃描條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="results"></div></div>`}
+   <label class="field"><span>書名</span><input name="title" value="${esc(b.title)}" required></label>
+   <div class="dup" id="dup"></div>
+   <label class="field"><span>作者</span><input name="author" value="${esc(b.author)}"></label>
+   <div class="grid3"><label class="field"><span>系列（套書、漫畫）</span><input name="series" list="seriesL" value="${esc(b.series)}" placeholder="沒有就空白"></label><label class="field"><span>第幾集</span><input name="vol" type="number" min="0" inputmode="numeric" value="${esc(b.vol||'')}"></label></div>
+   <datalist id="seriesL">${seriesList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+   <div class="field"><span>格式（可複選）</span>${fmtChecks(b.formats||[])}</div>
+   <div class="field"><span>狀態</span>${statusSeg(b.status)}</div>
+   <div class="grid2"><label class="field"><span>類別</span><select name="genre">${genreOptions(b,classify(b))}</select></label><label class="field"><span>放在哪（紙本）</span><input name="location" list="locL" value="${esc(b.location)}" placeholder="客廳書櫃第二層"></label></div>
+   <datalist id="locL">${locList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+   <div class="grid2"><label class="field"><span>買的日期</span><input type="date" name="bought" value="${esc(b.bought)}"></label><label class="field"><span>讀完日期</span><input type="date" name="finished" value="${esc(b.finished)}"></label></div>
+   <div class="grid2"><label class="field"><span>ISBN</span><input name="isbn" inputmode="numeric" value="${esc(b.isbn)}"></label><div class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></div></div>
+   <fieldset class="loan"><legend>借給朋友</legend><div class="grid2"><label class="field"><span>借給誰</span><input name="loanTo" value="${esc(b.loan?.to||'')}"></label><label class="field"><span>哪一天</span><input type="date" name="loanDate" value="${esc(b.loan?.date||'')}"></label></div>${b.loan?'<button type="button" class="btn sm ghost" data-returned>已經還了</button>':''}</fieldset>
+   <label class="field"><span>備註</span><textarea name="note" rows="2">${esc(b.note)}</textarea></label>
+   <label class="field"><span>封面圖片網址</span><input name="cover" inputmode="url" value="${esc(b.cover)}"></label>
+   <input type="hidden" name="hint" value="${esc(b.hint)}"><input type="hidden" name="pages" value="${esc(b.pages)}">
+   <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
+  showDup();
+  if(!id&&preset.isbn&&!preset.title)searchBooks();
+}
+function showDup(){
+  const box=$('#dup',form);if(!box)return;
+  const s=similar(form.elements.title?.value,form.elements.isbn?.value,form.dataset.id).slice(0,4);
+  box.innerHTML=s.length?`⚠ 書房裡已經有：${s.map(b=>`《${esc(b.title)}》（${(b.formats||[]).map(f=>FORMATS[f]).join('、')}・${STATUS[b.status]}）`).join('、')}`:'';
+}
+function updateGenreHint(){
+  const o=form.elements.genre?.querySelector('option[value=""]');
+  if(o)o.textContent='自動：'+classify({title:form.elements.title.value,author:form.elements.author.value,series:form.elements.series.value,hint:form.elements.hint.value});
+}
+form.addEventListener('input',e=>{
+  const n=e.target.name;
+  if(n==='title'||n==='isbn')showDup();
+  if(['title','author','series'].includes(n))updateGenreHint();
+  if(n==='finished'&&e.target.value){const r=form.querySelector('input[name=status][value=done]');if(r)r.checked=true}
+});
+form.addEventListener('keydown',e=>{if(e.target.name==='q'&&e.key==='Enter'){e.preventDefault();searchBooks()}});
+form.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+  if('close'in d)return sheet.close();
+  if('search'in d)return searchBooks();
+  if(d.scan)return startScan(d.scan);
+  if(d.pick!==undefined)return pickResult(+d.pick);
+  if('set'in d)return openSet();
+  if('bulk'in d)return openBulk();
+  if('returned'in d){form.elements.loanTo.value='';form.elements.loanDate.value='';t.remove();return}
+  if('delete'in d){const b=getBook(form.dataset.id);if(b&&confirm(`刪除《${b.title}》？`)){db.books=db.books.filter(x=>x.id!==b.id);save();sheet.close();toast('已刪除');render()}}
+});
+async function searchBooks(){
+  const q=form.elements.q?.value.trim(),box=$('.results',form);if(!q||!box)return;
+  box.innerHTML='<span class="muted small">搜尋中…</span>';
+  const r=await lookup(q);form._results=r;
+  if(!form.elements.title.value&&!looksIsbn(q))form.elements.title.value=q;
+  if(looksIsbn(q)&&!form.elements.isbn.value)form.elements.isbn.value=isbn13(q);
   const e=encodeURIComponent(q);
-  box.insertAdjacentHTML('beforeend',`<div class="small muted">在其他地方找：${[['Google',`https://www.google.com/search?tbm=bks&q=${e}`],['讀墨',`https://readmoo.com/search/keyword?q=${e}`],['Kindle',`https://www.amazon.com/s?i=digital-text&k=${e}`],['博客來',`https://search.books.com.tw/search/query/key/${e}/cat/all`]].map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent);margin-left:8px">${l}</a>`).join('')}</div>`);
-  updateGenreHint();
+  box.innerHTML=(r.length?r.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${safeUrl(v.cover)?`<img src="${esc(safeUrl(v.cover))}" alt="">`:'<span class="noimg"></span>'}<span><b>${esc(v.title)}</b><br><span class="muted small">${esc(v.author)}</span></span></button>`).join('')
+    :`<span class="muted small">${r.failed?'連不上書籍資料庫（檢查一下網路）。':'線上找不到這本，'}直接手動填也可以。</span>`)
+    +`<div class="small muted">到別處找：${[['博客來',`https://search.books.com.tw/search/query/key/${e}/cat/all`],['讀墨',`https://readmoo.com/search/keyword?q=${e}`],['Kobo',`https://www.kobo.com/tw/zh/search?query=${e}`],['Google',`https://www.google.com/search?tbm=bks&q=${e}`]].map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent);margin-left:8px">${l}</a>`).join('')}</div>`;
+  showDup();updateGenreHint();
 }
-function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form._added=[];form._saved=false;form.innerHTML=html;sheet.showModal()}
-function editEntry(id,date){
-  const e=db.entries.find(x=>x.id===id)||{date:date||today(),mood:4,text:'',songs:[]};
-  openSheet('entry',id,`<div class="sheet-head"><h3>${id?'編輯日記':'今天的心情'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
-   <label class="field"><span>日期</span><input type="date" name="date" id="f-date" value="${esc(e.date)}" required></label>
-   <div class="field"><span>心情</span><div class="moods">${MOODS.map(m=>`<label style="--mc:${m.c}"><input type="radio" name="mood" value="${m.v}" ${+e.mood===m.v?'checked':''}><span class="e">${m.e}</span>${m.l}</label>`).join('')}</div></div>
-   <label class="field"><span>想說的話</span><textarea name="text" id="f-text" rows="5" placeholder="今天發生了什麼？">${esc(e.text)}</textarea></label>
-   ${photoBlock(e.photos,'照片')}
-   ${songBlock(e.songs||[],false)}
-   <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
-}
-function editBook(id){
-  const b=db.books.find(x=>x.id===id)||{title:'',author:'',cover:'',pages:'',status:'reading',start:today(),finish:'',rating:0,songs:[],review:'',quotes:'',photos:[],genre:'',hint:''};
-  openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯書':'加一本書'}</h3><button type="button" class="icon-btn" data-close aria-label="關閉">✕</button></div>
-   ${id?'':`<div class="field"><span>搜尋書名（自動帶入作者、頁數、封面）</span><div style="display:flex;gap:6px"><input name="q" id="f-q" placeholder="例如：挪威的森林" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBooks()}"><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="results"></div></div>`}
-   <label class="field"><span>書名</span><input name="title" id="f-title" value="${esc(b.title)}" required></label>
-   <div class="grid2"><label class="field"><span>作者</span><input name="author" id="f-author" value="${esc(b.author)}"></label><label class="field"><span>頁數</span><input name="pages" id="f-pages" type="number" min="0" inputmode="numeric" value="${esc(b.pages)}"></label></div>
-   <label class="field"><span>類別</span><select name="genre" id="f-genre"><option value="">自動：${esc(classify(b))}</option>${[...GENRES,OTHER].map(g=>`<option ${!b.genreAuto&&b.genre===g.k?'selected':''}>${g.k}</option>`).join('')}</select><span class="genre-hint">會依書名、作者和書籍資料自動分類，不對可以自己選。</span></label>
-   <input type="hidden" name="hint" value="${esc(b.hint)}">
-   <label class="field"><span>封面圖片網址（留空會用第一張照片）</span><input name="cover" id="f-cover" value="${esc(b.cover)}" inputmode="url"></label>
-   <div class="grid2"><label class="field"><span>狀態</span><select name="status" id="f-status">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${b.status===k?'selected':''}>${l}</option>`).join('')}</select></label>
-     <label class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></label></div>
-   <div class="grid2"><label class="field"><span>開始讀</span><input type="date" name="start" id="f-start" value="${esc(b.start)}"></label><label class="field"><span>讀完</span><input type="date" name="finish" id="f-finish" value="${esc(b.finish)}"></label></div>
-   ${songBlock(b.songs||[],true)}
-   ${photoBlock(b.photos,'照片（書封、讀書的地方、劃線的那一頁⋯）')}
-   <label class="field"><span>心得</span><textarea name="review" id="f-review" rows="6" placeholder="這本書留給你什麼？">${esc(b.review)}</textarea></label>
-   <label class="field"><span>喜歡的句子（一行一句）</span><textarea name="quotes" id="f-quotes" rows="3">${esc(b.quotes)}</textarea></label>
-   <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
+function pickResult(i){
+  const v=form._results?.[i];if(!v)return;const f=form.elements;
+  f.title.value=v.title;f.author.value=v.author||f.author.value;f.cover.value=safeUrl(v.cover)||f.cover.value;
+  f.hint.value=v.hint||'';f.pages.value=v.pages||'';if(v.isbn)f.isbn.value=v.isbn;
+  const s=guessSeries(v.title);if(s&&!f.series.value){f.series.value=s.series;f.vol.value=s.vol}
+  $('.results',form).innerHTML=`<span class="small muted">已帶入《${esc(v.title)}》</span>`;
+  showDup();updateGenreHint();
 }
 form.addEventListener('submit',e=>{
   e.preventDefault();
-  const f=form,kind=f.dataset.kind,id=f.dataset.id||uid();
-  if(kind==='entry'){
-    if(!f.date.value)return toast('請選日期');
-    const rec={id,date:f.date.value,mood:+(f.mood.value||3),text:f.text.value.trim(),songs:readSongs(),photos:readPhotos(),created:db.entries.find(x=>x.id===id)?.created||Date.now()};
-    commitPhotos(db.entries.find(x=>x.id===id),rec);db.entries=db.entries.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');ui.cal=rec.date.slice(0,7);render();
-  }else{
-    if(!f.elements.title.value.trim())return toast('請填書名');
-    let status=f.status.value,finish=f.finish.value;
-    if(finish&&status==='reading')status='finished';
-    if(status==='finished'&&!finish)finish=today();
-    let start=f.start.value;if(start&&finish&&start>finish)start='';
-    const rec={id,title:f.elements.title.value.trim(),author:f.author.value.trim(),pages:+f.pages.value||0,cover:f.cover.value.trim(),status,start,finish,rating:+(f.rating.value||0),songs:readSongs(),review:f.review.value.trim(),quotes:f.quotes.value,photos:readPhotos(),hint:f.hint.value,genreAuto:!f.genre.value};
-    rec.genre=f.genre.value||classify(rec);
-    commitPhotos(db.books.find(x=>x.id===id),rec);
-    db.books=db.books.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast('已儲存');go('books',id);
-  }
+  const kind=form.dataset.kind;
+  if(kind==='set')return saveSet();
+  if(kind==='bulk')return saveBulk();
+  const f=form.elements,id=form.dataset.id||uid(),old=getBook(id);
+  const title=f.title.value.trim();if(!title)return toast('請填書名');
+  let status=form.querySelector('input[name=status]:checked')?.value||'unread',finished=f.finished.value;
+  if(status==='done'&&!finished)finished=today();
+  const formats=$$('input[name=fmt]:checked',form).map(x=>x.value);
+  const loanTo=f.loanTo.value.trim();
+  const rec={...(old||{}),id,title,author:f.author.value.trim(),series:f.series.value.trim(),vol:+f.vol.value||0,formats:formats.length?formats:['paper'],status,
+    bought:f.bought.value,finished,location:f.location.value.trim(),isbn:isbn13(f.isbn.value)||f.isbn.value.trim(),cover:f.cover.value.trim(),pages:+f.pages.value||0,
+    rating:+(form.querySelector('input[name=rating]:checked')?.value||0),note:f.note.value.trim(),hint:f.hint.value,genreAuto:!f.genre.value,
+    loan:loanTo?{to:loanTo,date:f.loanDate.value||today()}:null,added:old?.added||Date.now()};
+  if(status==='reading'&&!rec.started)rec.started=today();
+  rec.genre=f.genre.value||classify(rec);
+  db.books=db.books.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast(old?'已更新':'已加入書房');
+  if(rec.series)ui.open.add(norm(rec.series));
+  render();
 });
-
-function commitPhotos(old,rec){
-  form._saved=true;
-  const keep=new Set(rec.photos);
-  putPhotos(rec.photos.filter(i=>form._added.includes(i)));
-  delPhotos([...form._added,...(old?.photos||[])].filter(i=>!keep.has(i)));
+function addNext(key){
+  const all=seriesBooks(key),last=all[all.length-1],max=Math.max(0,...all.map(b=>b.vol||0));
+  editBook(null,{title:`${last.series} ${max+1}`,author:last.author,series:last.series,vol:max+1,formats:last.formats,location:last.location,genre:last.genreAuto?'':last.genre,genreAuto:last.genreAuto,hint:last.hint});
 }
-$('#viewer').addEventListener('click',()=>$('#viewer').close());
 
-function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2200)}
+/* ---------- a whole set at once ---------- */
+function openSet(){
+  openSheet('set','',`<div class="sheet-head"><h3>一次加一整套</h3>${closeBtn}</div>
+   <p class="small muted" style="margin:0">例如漫畫《鬼滅之刃》第 1 到 23 集。已經有的集數會自動跳過。</p>
+   <label class="field"><span>系列名稱</span><input name="series" list="seriesL2" required placeholder="鬼滅之刃"></label>
+   <datalist id="seriesL2">${seriesList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+   <label class="field"><span>作者</span><input name="author"></label>
+   <div class="grid2"><label class="field"><span>從第幾集</span><input name="from" type="number" min="0" inputmode="numeric" value="1"></label><label class="field"><span>到第幾集</span><input name="to" type="number" min="1" inputmode="numeric" placeholder="23"></label></div>
+   <label class="field"><span>已經讀到第幾集（沒讀就空白）</span><input name="readTo" type="number" min="0" inputmode="numeric"></label>
+   <div class="field"><span>格式</span>${fmtChecks(['paper'])}</div>
+   <div class="grid2"><label class="field"><span>類別</span><select name="genre"><option value="">自動判斷</option>${[...GENRES,OTHER].map(g=>`<option>${g.k}</option>`).join('')}</select></label><label class="field"><span>放在哪（紙本）</span><input name="location" list="locL2"></label></div>
+   <datalist id="locL2">${locList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+   <div class="sheet-foot"><span></span><button class="btn">加入</button></div>`);
+}
+function saveSet(){
+  const f=form.elements,series=f.series.value.trim(),from=+f.from.value||1,to=+f.to.value||from,readTo=+f.readTo.value||0;
+  if(!series)return toast('請填系列名稱');if(to<from||to-from>500)return toast('集數範圍怪怪的');
+  const formats=$$('input[name=fmt]:checked',form).map(x=>x.value);
+  const key=norm(series),have=new Set(seriesBooks(key).map(b=>b.vol));
+  const base={author:f.author.value.trim(),series,formats:formats.length?formats:['paper'],location:f.location.value.trim()};
+  let added=0,ts=Date.now();
+  for(let v=from;v<=to;v++){if(have.has(v))continue;
+    const done=v<=readTo,rec={id:uid(),title:`${series} ${v}`,...base,vol:v,status:done?'done':'unread',bought:today(),finished:'',isbn:'',cover:'',note:'',hint:'',loan:null,added:ts+v,genreAuto:!f.genre.value};
+    rec.genre=f.genre.value||classify(rec);if(!f.genre.value&&rec.genre==='其他')rec.genre='漫畫',rec.genreAuto=true;
+    db.books.push(rec);added++}
+  save();sheet.close();ui.open.add(key);toast(added?`加入了 ${added} 集${to-from+1-added?`（${to-from+1-added} 集原本就有）`:''}`:'這些集數都已經有了');go('shelf');
+}
+
+/* ---------- paste a list ---------- */
+function openBulk(){
+  openSheet('bulk','',`<div class="sheet-head"><h3>一次貼上書單</h3>${closeBtn}</div>
+   <p class="small muted" style="margin:0">一行一本。可以寫「書名 / 作者」。從讀墨、Kobo、Kindle 的書櫃頁面把書名複製過來貼上就好；重複的會自動跳過。</p>
+   <label class="field"><span>書單</span><textarea class="bulk" name="list" placeholder="原子習慣 / 詹姆斯・克利爾&#10;被討厭的勇氣&#10;葬送的芙莉蓮 1"></textarea></label>
+   <div class="field"><span>這批是什麼格式</span><div class="seg">${Object.entries(FORMATS).map(([k,l],i)=>`<label><input type="radio" name="fmt1" value="${k}" ${k==='readmoo'?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
+   <div class="field"><span>狀態</span>${statusSeg('unread')}</div>
+   <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" name="guess" checked> 書名結尾有數字就當成系列的第幾集（例如「葬送的芙莉蓮 3」）</label>
+   <div class="sheet-foot"><span></span><button class="btn">加入</button></div>`);
+}
+function saveBulk(){
+  const f=form.elements,fmt=form.querySelector('input[name=fmt1]:checked')?.value||'ebook',status=form.querySelector('input[name=status]:checked')?.value||'unread',guess=f.guess.checked;
+  const lines=f.list.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(!lines.length)return toast('還沒貼上書單');
+  let added=0,merged=0,skipped=0,ts=Date.now();
+  lines.forEach((line,i)=>{
+    let [title,author='']=line.split(/\s+[\/／|｜]\s+|\t/).map(s=>s.trim());title=title.replace(/^[-•*・\d]+[.、)\s]+(?=\D)/,'').trim();if(!title)return;
+    const same=db.books.find(b=>norm(b.title)===norm(title));
+    if(same){if((same.formats||[]).includes(fmt))skipped++;else{same.formats=[...(same.formats||[]),fmt];merged++}return}
+    const s=guess?guessSeries(title,true):null;
+    const rec={id:uid(),title,author,series:s?.series||'',vol:s?.vol||0,formats:[fmt],status,bought:'',finished:status==='done'?today():'',location:'',isbn:'',cover:'',note:'',hint:'',loan:null,added:ts+i,genreAuto:true};
+    rec.genre=classify(rec);if(s&&rec.genre==='其他')rec.genre='漫畫';db.books.push(rec);added++;
+  });
+  save();sheet.close();toast(`加入 ${added} 本`+(merged?`，${merged} 本已有紙本、補上格式`:'')+(skipped?`，${skipped} 本重複跳過`:''));go('shelf');
+}
+
+/* ---------- barcode scanner ---------- */
+const scanDlg=$('#scan'),video=$('#video');let scanState=null;
+async function startScan(ctx){
+  if(!navigator.mediaDevices?.getUserMedia)return toast('這個瀏覽器不能用相機，請直接輸入 ISBN');
+  const wasSheet=sheet.open;
+  scanState={ctx,stream:null,reader:null,stop:false,wasSheet};
+  $('#scanMsg').textContent='對準書背 978 開頭的條碼';
+  scanDlg.showModal();
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false});
+    if(!scanState||scanState.stop){stream.getTracks().forEach(t=>t.stop());return}
+    scanState.stream=stream;video.srcObject=stream;await video.play();
+    const found=code=>{code=String(code).replace(/\D/g,'');if(/^97[89]\d{10}$/.test(code)){stopScan();onScanned(ctx,code)}else $('#scanMsg').textContent='這個不是 ISBN，找 978 開頭的那個條碼'};
+    let native=false;
+    if('BarcodeDetector'in window){try{const f=await BarcodeDetector.getSupportedFormats();native=f.includes('ean_13')}catch(e){}}
+    if(native){
+      const det=new BarcodeDetector({formats:['ean_13']});
+      const loop=async()=>{if(!scanState||scanState.stop)return;try{const r=await det.detect(video);if(r[0])return found(r[0].rawValue)}catch(e){}setTimeout(loop,180)};loop();
+    }else{
+      if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';s.onload=res;s.onerror=rej;document.head.append(s)});
+      if(!scanState||scanState.stop)return;
+      const hints=new Map();hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13]);
+      const reader=new ZXing.BrowserMultiFormatReader(hints,250);scanState.reader=reader;
+      reader.decodeFromStream(stream,video,res=>{if(res&&scanState&&!scanState.stop)found(res.getText())});
+    }
+  }catch(e){stopScan();toast(e&&e.name==='NotAllowedError'?'沒有相機權限，可以到 Safari 設定開啟':'無法開啟相機，請直接輸入 ISBN')}
+}
+function stopScan(){
+  if(!scanState)return;scanState.stop=true;
+  try{scanState.reader?.reset()}catch(e){}
+  scanState.stream?.getTracks().forEach(t=>t.stop());video.srcObject=null;
+  scanState=null;if(scanDlg.open)scanDlg.close();
+}
+$('#scanClose').addEventListener('click',stopScan);
+scanDlg.addEventListener('cancel',stopScan);
+function onScanned(ctx,code){
+  if(navigator.vibrate)navigator.vibrate(60);
+  if(ctx==='sheet'&&sheet.open&&form.elements.q){form.elements.q.value=code;form.elements.isbn.value=code;showDup();searchBooks();return}
+  if(ui.tab!=='shelf'){ui.tab='shelf';location.hash='shelf'}
+  ui.q=code;ui.online=null;render();lookupIsbnForHome(code);
+}
+
+/* ---------- import / export / migrate ---------- */
+function download(name,text,type){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.append(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+function exportCsv(){
+  const cols=[['書名','title'],['作者','author'],['系列','series'],['集數','vol'],['格式',b=>(b.formats||[]).map(f=>FORMATS[f]).join('、')],['狀態',b=>STATUS[b.status]],['類別',genreOf],['放在哪','location'],['買的日期','bought'],['讀完日期','finished'],['ISBN','isbn'],['評分','rating'],['借給',b=>b.loan?.to||''],['備註','note']];
+  const cell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const rows=[cols.map(c=>c[0]),...db.books.map(b=>cols.map(([,k])=>typeof k==='function'?k(b):b[k]))].map(r=>r.map(cell).join(','));
+  download(`我的書房-${today()}.csv`,'﻿'+rows.join('\n'),'text/csv');
+}
+function importJson(file){
+  if(!file)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.books))throw 0;
+    if(!confirm(`用備份裡的 ${d.books.length} 本書取代目前的 ${db.books.length} 本？`))return;
+    db={books:d.books,goal:d.goal||12,pick:null,migrated:true};save();toast('已還原');render()}catch(e){toast('這不是書房的備份檔')}};
+  r.readAsText(file);
+}
+function migrate(){
+  let o;try{o=JSON.parse(localStorage.getItem(OLD_KEY)||'null')}catch(e){}
+  const books=o?.books||[];let added=0;
+  const map={reading:'reading',finished:'done',want:'unread'};
+  books.forEach(b=>{if(!b.title||db.books.some(x=>norm(x.title)===norm(b.title)))return;
+    const s=guessSeries(b.title);
+    const rec={id:uid(),title:b.title,author:b.author||'',series:s?.series||'',vol:s?.vol||0,formats:['paper'],status:map[b.status]||'unread',bought:b.start||'',started:b.start||'',finished:b.finish||'',
+      location:'',isbn:'',cover:safeUrl(b.cover),pages:+b.pages||0,rating:+b.rating||0,note:[b.review,b.quotes].filter(Boolean).join('\n\n'),hint:b.hint||'',loan:null,added:Date.now()+added,genreAuto:true};
+    rec.genre=classify(rec);db.books.push(rec);added++});
+  db.migrated=true;save();toast(added?`搬了 ${added} 本書過來，格式先設成紙本，可以再改`:'沒有新的書要搬');go('shelf');
+}
 
 /* ---------- demo ---------- */
 function loadDemo(){
-  const y=new Date().getFullYear(),d=(m,dd)=>`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-  const perfect={url:'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',title:'Perfect',artist:'Ed Sheeran'};
-  const books=[
-    ['小王子','安東尼・聖修伯里',112,d(1,20),5,[{...perfect,feeling:'玫瑰和小王子之間，就是這首歌那種笨拙又認真的喜歡。',added:d(1,20)}],'「真正重要的東西，用眼睛是看不見的。」大人版的閱讀，比小時候更痛一點。','真正重要的東西，用眼睛是看不見的。'],
-    ['挪威的森林','村上春樹',400,d(3,2),4,[{url:'',title:'Norwegian Wood',artist:'The Beatles',feeling:'書名的由來，直子最喜歡的歌。',added:d(3,2)}],'像下了一整本的雨。',''],
-    ['被討厭的勇氣','岸見一郎、古賀史健',336,d(4,18),4,[],'課題分離這件事，我還在練習。',''],
-    ['原子習慣','詹姆斯・克利爾',336,d(6,9),5,[{url:'',title:'Shape of You',artist:'Ed Sheeran',feeling:'每天跑步時聽的歌，剛好就是一個「習慣堆疊」。',added:d(6,9)}],'',''],
-    ['解憂雜貨店','東野圭吾',384,d(7,30),5,[{url:'',title:'Sarà Perché Ti Amo',artist:'Ricchi e Poveri',feeling:'輕快、溫暖，像那些回信。',added:d(7,30)}],'每個人的煩惱都被認真對待了。',''],
-    ['人間失格','太宰治',176,d(9,14),3,[],'',''],
-  ].map(([title,author,pages,finish,rating,songs,review,quotes])=>({id:uid(),title,author,pages,cover:'',status:'finished',start:'',finish,rating,songs,review,quotes}));
-  books.push({id:uid(),title:'百年孤寂',author:'馬奎斯',pages:448,cover:'',status:'reading',start:d(10,1),finish:'',rating:0,songs:[{url:'',title:'Kagerou',artist:'Vaundy',feeling:'讀到雨下了四年那段時一直循環。',added:d(10,5)}],review:'',quotes:''});
-  const ent=[[d(10,8),5,'把《百年孤寂》的家譜畫完了，終於分得清誰是誰。',[{url:'',title:'Kagerou',artist:'Vaundy'}]],
-    [d(10,7),3,'下雨，通勤好擠。',[perfect]],[d(10,5),4,'週末去書店待了一下午。',[]],[d(10,2),2,'有點累，早點睡。',[]],[d(9,28),5,'和朋友去看了演唱會！',[{url:'',title:'Shape of You',artist:'Ed Sheeran'}]]]
-    .map(([date,mood,text,songs],i)=>({id:uid(),date,mood,text,songs,created:Date.now()-i}));
-  db.books.push(...books);db.entries.push(...ent);save();
+  if(db.books.length&&!confirm('範例書會加在你現有的書旁邊，之後可以一本本刪掉。繼續？'))return;
+  const y=new Date().getFullYear(),d=(yy,m,dd)=>`${yy}-${pad(m)}-${pad(dd)}`;let t=Date.now()-1e6;
+  const mk=(o)=>{const r={id:uid(),author:'',series:'',vol:0,formats:['paper'],status:'unread',bought:d(y,1,10),finished:'',location:'',isbn:'',cover:'',note:'',hint:'',loan:null,added:t+=1000,genreAuto:true,...o};r.genre=classify(r);return r};
+  const hp=['神秘的魔法石','消失的密室','阿茲卡班的逃犯','火盃的考驗','鳳凰會的密令','混血王子的背叛','死神的聖物'];
+  db.books.push(
+    ...hp.map((s,i)=>mk({title:`哈利波特(${i+1})：${s}`,author:'J.K.羅琳',series:'哈利波特',vol:i+1,status:i<3?'done':i===3?'reading':'unread',finished:i<3?d(y,2+i,12):'',started:i===3?d(y,10,20):'',bought:d(y-1,12,1),location:'臥室書櫃'})),
+    ...[1,2,3,4,5,7].map(v=>mk({title:`葬送的芙莉蓮 ${v}`,author:'山田鐘人',series:'葬送的芙莉蓮',vol:v,status:v<=2?'done':'unread',finished:v<=2?d(y,5,v):'',bought:d(y,4,20),location:'客廳書櫃第二層'})),
+    mk({title:'原子習慣',author:'詹姆斯・克利爾',formats:['readmoo'],status:'done',finished:d(y,3,8),bought:d(y-1,6,1)}),
+    mk({title:'被討厭的勇氣',author:'岸見一郎、古賀史健',formats:['paper','kobo'],status:'unread',bought:d(y-2,8,3),location:'客廳書櫃第一層',note:'不小心買了兩個版本'}),
+    mk({title:'解憂雜貨店',author:'東野圭吾',formats:['paper'],status:'unread',bought:d(y-1,2,14),location:'客廳書櫃第一層',loan:{to:'小美',date:d(y,9,30)}}),
+    mk({title:'人類大歷史',author:'哈拉瑞',formats:['kindle'],status:'dropped',bought:d(y-1,11,11)}),
+    mk({title:'挪威的森林',author:'村上春樹',formats:['readmoo'],status:'unread',bought:d(y,6,18)}),
+    mk({title:'小王子',author:'安東尼・聖修伯里',formats:['paper'],status:'done',finished:d(y,1,30),bought:d(y-3,5,5),location:'床頭'}),
+  );
+  save();toast('已載入範例');go('shelf');
 }
 
-/* boot */
-loadPhotos().then(()=>PH.size&&render());
-const h=location.hash.slice(1);
-if(h.startsWith('book-')){ui.tab='books';ui.bookId=h.slice(5)}else if(['diary','books','milestones','settings'].includes(h))ui.tab=h;
+function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2600)}
+
 render();
 </script>
 </body>
