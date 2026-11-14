@@ -54,7 +54,7 @@ h2.sec small{font-weight:400;font-size:13px;color:var(--muted)}
 .tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
 
 /* search */
-.search{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:6px 10px}
+.search{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:6px 10px}
 .search-box{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 12px;box-shadow:var(--shadow)}
 .search-box input::-webkit-search-cancel-button{display:none}
 .search-box input{flex:1;min-width:0;border:0;background:none;padding:8px 0;outline:none;font-size:16px}
@@ -82,8 +82,6 @@ h2.sec small{font-weight:400;font-size:13px;color:var(--muted)}
 /* book rows */
 .list{display:flex;flex-direction:column;gap:8px}
 .row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--surface);border-radius:14px;padding:8px 10px 8px 8px;box-shadow:var(--shadow)}
-.cover{width:44px;height:62px;border-radius:5px;flex:none;object-fit:cover;background:var(--line)}
-.spine{width:44px;height:62px;border-radius:5px;flex:none;display:grid;place-items:center;color:#fff;font:900 18px/1 var(--display);background:var(--c,#8a7f70);box-shadow:inset -5px 0 0 rgba(0,0,0,.12)}
 .meta{flex:1;min-width:0}
 .meta b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta .sub{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -118,7 +116,6 @@ h2.sec small{font-weight:400;font-size:13px;color:var(--muted)}
 .bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
 .pick{display:flex;gap:14px;align-items:center}
-.pick .cover,.pick .spine{width:70px;height:100px;font-size:26px}
 .pick h3{font:900 20px/1.3 var(--display);margin:0 0 2px}
 .btn{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:9px 16px;font-weight:700}
 .btn.ghost{background:var(--accent-soft);color:var(--accent)}
@@ -174,6 +171,77 @@ fieldset.loan legend{font-size:13px;color:var(--muted);padding:0 6px}
 .rate label{font-size:24px;color:var(--line);cursor:pointer;line-height:1}
 .rate input:checked~label,.rate label:hover,.rate label:hover~label{color:var(--reading)}
 .rate input:focus-visible+label{outline:2px solid var(--accent)}
+
+/* covers: real image on top of a generated typographic cover */
+.cv{position:relative;display:block;flex:none;aspect-ratio:2/3;border-radius:3px 7px 7px 3px;overflow:hidden;background:var(--c,#8a7f70);color:#fff;container-type:inline-size;box-shadow:0 1px 2px rgba(41,35,29,.14),0 8px 18px -6px rgba(41,35,29,.28)}
+.cv::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.2),rgba(255,255,255,.14) 3.5%,rgba(0,0,0,.05) 7%,transparent 10%);pointer-events:none;z-index:2}
+.cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--surface);z-index:1}
+.gen{position:absolute;inset:0;display:flex;flex-direction:column;gap:4cqi;padding:13cqi 10cqi 10cqi 15cqi;background:linear-gradient(165deg,rgba(255,255,255,.16),transparent 50%,rgba(0,0,0,.12))}
+.gen b{font:900 14cqi/1.28 var(--display);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.gen i{font:900 26cqi/1 var(--display);font-style:normal;margin-top:auto;opacity:.92}
+.gen small{font-size:8.5cqi;line-height:1.3;opacity:.85;margin-top:auto;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gen i+small{margin-top:3cqi}
+.cv-sm{width:44px}.cv-sm .gen{padding:0;align-items:center;justify-content:center}.cv-sm .gen b{font-size:44cqi}
+.cv-md{width:62px}.cv-md .gen b{-webkit-line-clamp:4}
+.cv-lg{width:104px}.cv-xl{width:150px}.cv-fill{width:100%}
+
+.top>div{min-width:0}
+.bar-top{position:sticky;top:0;padding-top:calc(10px + env(safe-area-inset-top,0px));z-index:6;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);margin:0 -16px;padding-inline:8px 16px}
+.bar-top .icon-btn{color:var(--ink)}
+.link{border:0;background:none;color:var(--accent);font-size:13.5px;font-weight:500;padding:4px 0}
+h2.sec .vt{margin-left:auto}
+h2.sec small{margin-right:auto}
+.vt{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:2px}
+.vt button{border:0;background:none;width:34px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.vt svg{width:18px;height:18px}
+.vt button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.btn svg{width:18px;height:18px;vertical-align:-4px;margin-right:4px}
+
+/* cover grid (3 across on phones) */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 14px}
+@media (min-width:560px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.gi{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:7px;min-width:0;color:inherit}
+.cvbox{position:relative;display:block}
+.gt{font-size:13px;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gs{font-size:11.5px;color:var(--muted);margin-top:-4px}
+.badge{position:absolute;left:6px;bottom:6px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:var(--c);border-radius:99px;padding:1px 7px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+/* a series is a little stack of covers */
+.stk{margin:0 7px 7px 0}
+.stk::before,.stk::after{content:"";position:absolute;inset:0;border-radius:3px 7px 7px 3px;background:color-mix(in srgb,var(--c) 55%,var(--bg));box-shadow:0 1px 2px rgba(41,35,29,.15)}
+.stk::before{transform:translate(7px,7px);opacity:.55}
+.stk::after{transform:translate(3.5px,3.5px)}
+.stk .cv{z-index:1}
+.cnt{position:absolute;right:-4px;top:-6px;z-index:3;min-width:24px;height:24px;border-radius:99px;background:var(--ink);color:var(--bg);font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 6px}
+
+/* horizontal rails */
+.rail,.cats{display:flex;gap:14px;overflow-x:auto;margin:0 -16px;padding:4px 16px 12px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail::-webkit-scrollbar,.cats::-webkit-scrollbar{display:none}
+.ri{flex:none;width:108px;scroll-snap-align:start;border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:7px;color:inherit}
+.cat{flex:none;width:104px;border:0;background:none;padding:0;text-align:center;color:inherit;scroll-snap-align:start}
+.cat .box{position:relative;height:108px;display:flex;align-items:flex-end;justify-content:center}
+.cat .box::before{content:"";position:absolute;inset:auto 0 0;height:58%;background:var(--surface);border-radius:14px;box-shadow:var(--shadow)}
+.cat .cv{margin-bottom:12px}
+.cat b{display:block;font-size:14px;margin-top:8px}
+.cat>span:last-child{font-size:12px;color:var(--muted)}
+.cat[aria-pressed="true"] .box::before{background:var(--accent-soft);outline:2px solid var(--accent)}
+
+/* book + series pages */
+.hero{margin:0 -16px;padding:8px 16px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;background:linear-gradient(color-mix(in srgb,var(--c) 22%,var(--bg)),var(--bg))}
+.hero .cv{margin:6px 0 8px}
+.bt{font:900 24px/1.3 var(--display);margin:0;text-wrap:balance}
+.slink{border:0;background:var(--surface);border-radius:99px;padding:4px 12px;color:var(--accent);font-size:13.5px;box-shadow:var(--shadow);margin-top:4px}
+.stseg{margin:4px 0 14px}
+.info{padding:4px 14px}
+.kv{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.kv:first-child{border-top:0}
+.kv>span{width:64px;flex:none;color:var(--muted);font-size:13.5px}
+.kv b{flex:1;font-weight:500}
+.kv.note{align-items:flex-start}.kv p{margin:0;flex:1;white-space:pre-wrap}
+.shead{display:flex;gap:16px;align-items:flex-end;margin-top:4px}
+.shead>div{flex:1;min-width:0}
+.cvrow{display:flex;gap:14px;align-items:center;margin:10px 0 4px}
+.emptycv{display:flex;justify-content:center;margin:10px 0 4px}
+.empty .btn{margin-top:0}
 
 /* scanner */
 dialog.scan{border:0;padding:0;background:#000;color:#fff;width:100%;max-width:520px;border-radius:20px;overflow:hidden}
@@ -336,93 +404,197 @@ function similar(title,isbn,exceptId){
     return bt===nt||(nt.length>=3&&bt.includes(nt))||(bt.length>=3&&nt.includes(bt));});
 }
 
-/* ---------- UI state ---------- */
-const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',open:new Set(),online:null};
-function go(tab){ui.tab=tab;location.hash=tab;render();window.scrollTo(0,0)}
+/* ---------- cover photos (IndexedDB; the book only keeps the key) ---------- */
+const COV=new Map();
+const idb=new Promise((res,rej)=>{try{const r=indexedDB.open('my-bookroom',1);r.onupgradeneeded=()=>r.result.createObjectStore('covers');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+idb.catch(()=>{});
+const covTx=(mode,fn)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction('covers',mode);fn(t.objectStore('covers'));t.oncomplete=res;t.onerror=()=>rej(t.error)}));
+const loadCovers=()=>idb.then(d=>new Promise(res=>{const q=d.transaction('covers').objectStore('covers').openCursor();q.onsuccess=()=>{const c=q.result;if(!c)return res();if(/^data:image\//.test(c.value))COV.set(c.key,c.value);c.continue()};q.onerror=()=>res()})).catch(()=>{});
+const putCover=(key,data)=>{COV.set(key,data);return covTx('readwrite',s=>s.put(data,key)).catch(()=>toast('照片存不下，手機空間可能不足'))};
+const delCover=key=>{if(!key)return;COV.delete(key);return covTx('readwrite',s=>s.delete(key)).catch(()=>{})};
+const coverSrc=b=>b._src!==undefined?b._src:((b.photo&&COV.get(b.photo))||safeUrl(b.cover));
+function shrink(file,max=720,q=.8){
+  return new Promise((res,rej)=>{const u=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};
+    img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u});
+}
+// One hidden <input capture> opens the rear camera straight away on phones
+const camIn=document.createElement('input');camIn.type='file';camIn.accept='image/*';camIn.setAttribute('capture','environment');camIn.hidden=true;document.body.append(camIn);
+function pickPhoto(cb){camIn.value='';camIn.onchange=async()=>{const f=camIn.files[0];if(!f)return;try{cb(await shrink(f))}catch(e){toast('讀不到這張照片')}};camIn.click()}
+
+/* ---------- UI state + routing (#shelf, #plan, #settings, #book/<id>, #series/<key>) ---------- */
+const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',view:db.view||'grid',online:null,bookId:null,series:null,scroll:0,inApp:false};
+function parseHash(){
+  const [t,arg]=decodeURIComponent(location.hash.slice(1)).split('/');
+  if(t==='book'&&getBook(arg))return{tab:'book',bookId:arg};
+  if(t==='series'&&arg&&seriesBooks(arg).length)return{tab:'series',series:arg};
+  return{tab:['plan','settings'].includes(t)?t:'shelf'};
+}
+function applyRoute(){
+  if(!db.setup)return;
+  const prev=ui.tab;if(prev==='shelf')ui.scroll=window.scrollY;
+  Object.assign(ui,parseHash());render();
+  window.scrollTo(0,ui.tab==='shelf'&&(prev==='book'||prev==='series')?ui.scroll:0);
+}
+function go(tab,arg){
+  const h=arg?`${tab}/${encodeURIComponent(arg)}`:tab;ui.inApp=true;
+  if(decodeURIComponent(location.hash.slice(1))===h)applyRoute();else location.hash=h;
+}
+function back(){if(ui.inApp&&history.length>1)history.back();else go('shelf')}
 $$('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.tab)));
-window.addEventListener('hashchange',()=>{const t=location.hash.slice(1);if(t&&t!==ui.tab&&['shelf','plan','settings'].includes(t)&&db.setup){ui.tab=t;render()}});
-{const t=location.hash.slice(1);if(['shelf','plan','settings'].includes(t))ui.tab=t}
+window.addEventListener('hashchange',applyRoute);
 
 function render(){
-  $$('.tab').forEach(t=>t.dataset.tab===ui.tab?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
+  const cur=['book','series'].includes(ui.tab)?'shelf':ui.tab;
+  $$('.tab').forEach(t=>t.dataset.tab===cur?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
   const app=$('#app');
   document.body.classList.toggle('welcoming',ui.tab==='welcome');
   if(ui.tab==='welcome')app.innerHTML=viewWelcome();
   else if(ui.tab==='plan')app.innerHTML=viewPlan();
   else if(ui.tab==='settings')app.innerHTML=viewSettings();
-  else{app.innerHTML=viewShelf();}
+  else if(ui.tab==='book'&&getBook(ui.bookId))app.innerHTML=viewBook(getBook(ui.bookId));
+  else if(ui.tab==='series'&&seriesBooks(ui.series).length)app.innerHTML=viewSeries(ui.series);
+  else{ui.tab='shelf';app.innerHTML=viewShelf()}
 }
 
 /* ---------- pieces ---------- */
-function coverHtml(b,cls='cover'){
-  const u=safeUrl(b.cover);
-  if(u)return`<img class="${cls}" src="${esc(u)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;spine&quot; style=&quot;--c:${genreColor(genreOf(b))}&quot;>${esc((b.series||b.title||'?').slice(0,1)).replace(/'/g,'')}</span>'">`;
-  return`<span class="spine" style="--c:${genreColor(genreOf(b))}">${esc((b.series||b.title||'?').trim().slice(0,1))}</span>`;
+// A real cover when we have one; otherwise a generated typographic cover in the genre colour.
+function coverHtml(b,size='sm'){
+  const src=coverSrc(b),name=(b.series||b.title||'').trim();
+  const text=size==='sm'?name.slice(0,1):name;
+  return`<span class="cv cv-${size}" style="--c:${genreColor(genreOf(b))}" aria-hidden="true"><span class="gen"><b>${esc(text)}</b>${b.vol&&size!=='sm'?`<i>${b.vol}</i>`:''}${b.author&&size!=='sm'&&size!=='md'?`<small>${esc(b.author)}</small>`:''}</span>${src?`<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`:''}</span>`;
 }
+const fmtNames=b=>(b.formats||[]).map(f=>FORMATS[f]||f).join('、');
 const fmtBadges=b=>`<span class="fmts">${(b.formats||[]).map(f=>`<span class="fmt">${esc(FORMATS[f]||f)}</span>`).join('')}${b.loan?`<span class="fmt loan">借給 ${esc(b.loan.to||'?')}</span>`:''}</span>`;
 const statusPill=b=>`<span class="pill st-${b.status}">${STATUS[b.status]||''}</span>`;
+const stLine=b=>b.loan?`<span class="gs" style="color:var(--warn)">借給 ${esc(b.loan.to||'?')}</span>`:b.status!=='unread'?`<span class="gs" style="color:var(--${b.status})">● ${STATUS[b.status]}</span>`:'';
 function bookRow(b){
   const sub=[b.author,b.location&&(b.formats||[]).includes('paper')?'📍'+b.location:''].filter(Boolean).join(' · ');
-  return`<button class="row" data-edit="${esc(b.id)}">${coverHtml(b)}<span class="meta"><b>${esc(b.title)}</b>${sub?`<span class="sub">${esc(sub)}</span>`:''}${fmtBadges(b)}</span>${statusPill(b)}</button>`;
+  return`<button class="row" data-open="${esc(b.id)}">${coverHtml(b)}<span class="meta"><b>${esc(b.title)}</b>${sub?`<span class="sub">${esc(sub)}</span>`:''}${fmtBadges(b)}</span>${statusPill(b)}</button>`;
 }
+function gridItem(b){return`<button class="gi" data-open="${esc(b.id)}"><span class="cvbox">${coverHtml(b,'fill')}</span><span class="gt">${esc(b.title)}</span>${stLine(b)}</button>`}
 const seriesKey=b=>norm(b.series);
 const seriesBooks=key=>db.books.filter(b=>b.series&&seriesKey(b)===key).sort((a,b)=>(a.vol||999)-(b.vol||999)||zhSort(a.title,b.title));
-function seriesCard(key,shown){
-  const all=seriesBooks(key),first=all[0],done=all.filter(b=>b.status==='done').length,open=ui.open.has(key)||!!ui.q;
-  const vols=all.filter(b=>b.vol).map(b=>b.vol),max=Math.max(0,...vols),min=Math.min(...vols,1);
-  let chips='';
-  if(vols.length&&max-min<300){
-    for(let v=min;v<=max;v++){const bs=all.filter(b=>b.vol===v);
-      chips+=bs.length?bs.map(b=>`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-edit="${esc(b.id)}" aria-label="第 ${v} 集，${STATUS[b.status]}">${v}</button>`).join('')
-        :`<span class="vol missing" title="沒有第 ${v} 集">${v}</span>`;}
-  }
-  all.filter(b=>!b.vol).forEach(b=>chips+=`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-edit="${esc(b.id)}" aria-label="${esc(b.title)}">·</button>`);
-  chips+=`<button class="vol next" data-next="${esc(key)}" aria-label="加入下一集">＋${max?max+1:''}</button>`;
-  const missing=vols.length?(max-min+1)-new Set(vols).size:0;
-  return`<div class="series"><button class="row" data-toggle="${esc(key)}" aria-expanded="${open}">${coverHtml(first)}<span class="meta"><b>${esc(first.series)}</b><span class="sub">${esc(first.author||'')}</span><span class="count">共 ${all.length} 本${vols.length?`・到第 ${max} 集`:''}・讀完 ${done}${missing?`・缺 ${missing} 集`:''}</span></span><span class="muted" aria-hidden="true">${open?'▴':'▾'}</span></button>
-    <div class="vols">${chips}</div>
-    ${open?`<div class="inner">${(shown||all).map(bookRow).join('')}</div>`:''}</div>`;
+function seriesInfo(key){
+  const all=seriesBooks(key),vols=all.filter(b=>b.vol).map(b=>b.vol),max=Math.max(0,...vols),min=Math.min(...vols,1);
+  return{all,first:all.find(b=>coverSrc(b))||all[0],done:all.filter(b=>b.status==='done').length,max,min,missing:vols.length?(max-min+1)-new Set(vols).size:0,vols};
 }
+function volChips(key){
+  const s=seriesInfo(key);let chips='';
+  if(s.vols.length&&s.max-s.min<300)for(let v=s.min;v<=s.max;v++){const bs=s.all.filter(b=>b.vol===v);
+    chips+=bs.length?bs.map(b=>`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-open="${esc(b.id)}" aria-label="第 ${v} 集，${STATUS[b.status]}">${v}</button>`).join('')
+      :`<span class="vol missing" title="沒有第 ${v} 集">${v}</span>`;}
+  s.all.filter(b=>!b.vol).forEach(b=>chips+=`<button class="vol st-${b.status}" style="--c:var(--${b.status})" data-open="${esc(b.id)}" aria-label="${esc(b.title)}">·</button>`);
+  return chips+`<button class="vol next" data-next="${esc(key)}" aria-label="加入下一集">＋${s.max?s.max+1:''}</button>`;
+}
+function gridSeries(key){
+  const s=seriesInfo(key);
+  return`<button class="gi" data-series="${esc(key)}"><span class="cvbox stk" style="--c:${genreColor(genreOf(s.first))}">${coverHtml({...s.first,vol:0},'fill')}<span class="cnt">${s.all.length}</span></span><span class="gt">${esc(s.first.series)}</span><span class="gs">讀完 ${s.done}/${s.all.length}${s.missing?`・缺 ${s.missing} 集`:''}</span></button>`;
+}
+function listSeries(key){
+  const s=seriesInfo(key);
+  return`<div class="series"><button class="row" data-series="${esc(key)}">${coverHtml({...s.first,vol:0})}<span class="meta"><b>${esc(s.first.series)}</b><span class="sub">${esc(s.first.author||'')}</span><span class="count">共 ${s.all.length} 本${s.max?`・到第 ${s.max} 集`:''}・讀完 ${s.done}${s.missing?`・缺 ${s.missing} 集`:''}</span></span><span class="muted" aria-hidden="true">›</span></button><div class="vols">${volChips(key)}</div></div>`;
+}
+const legend=`<div class="legend"><span><i class="o" style="--c:var(--unread)"></i>未讀</span><span><i style="--c:var(--reading)"></i>閱讀中</span><span><i style="--c:var(--done)"></i>讀完</span><span><i class="o" style="--c:var(--muted);border-style:dashed"></i>沒有這集</span></div>`;
+const ICON={
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>',
+  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg>',
+};
 
-/* ---------- shelf ---------- */
+/* ---------- shelf (home) ---------- */
 function filtered(){
   return db.books.filter(b=>matches(b,ui.q)
-    &&(!ui.status||(ui.status==='loan'?!!b.loan:b.status===ui.status))
+    &&(ui.q||((!ui.status||(ui.status==='loan'?!!b.loan:b.status===ui.status))
     &&(!ui.fmt||(ui.fmt==='ebook-any'?(b.formats||[]).some(f=>f!=='paper'):(b.formats||[]).includes(ui.fmt)))
-    &&(!ui.genre||genreOf(b)===ui.genre));
+    &&(!ui.genre||genreOf(b)===ui.genre))));
 }
 function sortBooks(list){
   const by={recent:(a,b)=>(b.added||0)-(a.added||0),title:(a,b)=>zhSort(a.series||a.title,b.series||b.title)||(a.vol||0)-(b.vol||0),
     author:(a,b)=>zhSort(a.author||'~',b.author||'~')||zhSort(a.title,b.title),oldest:(a,b)=>addedDate(a).localeCompare(addedDate(b))};
   return list.sort(by[ui.sort]||by.recent);
 }
+function shelfItems(list){
+  // series collapse into one item, kept at the position of their first matching volume
+  const items=[],seen=new Set();
+  for(const b of list){if(b.series){const k=seriesKey(b);if(!seen.has(k)){seen.add(k);items.push({k})}}else items.push(b)}
+  return items;
+}
+function shelfHtml(items){
+  if(!items.length)return'';
+  if(ui.view==='list')return`<div class="list">${items.map(it=>it.k!==undefined?listSeries(it.k):bookRow(it)).join('')}</div>${items.some(it=>it.k!==undefined)?legend:''}`;
+  return`<div class="grid">${items.map(it=>it.k!==undefined?gridSeries(it.k):gridItem(it)).join('')}</div>`;
+}
 function viewShelf(){
-  const n=db.books.length,count=s=>db.books.filter(b=>b.status===s).length,loans=db.books.filter(b=>b.loan).length;
-  const list=sortBooks(filtered());
-  // group series together, keeping the position of the series' first matching volume
-  const items=[],seen=new Map();
-  for(const b of list){if(b.series){const k=seriesKey(b);if(!seen.has(k)){const g={k,books:[]};seen.set(k,g);items.push(g)}seen.get(k).books.push(b)}else items.push(b)}
-  const genres=[...new Set(db.books.map(genreOf))].sort(zhSort);
+  const n=db.books.length,unread=db.books.filter(b=>b.status==='unread'),loans=db.books.filter(b=>b.loan).length;
+  const list=sortBooks(filtered()),items=shelfItems(list);
   const chip=(k,v,l)=>`<button class="chip" data-f="${k}" data-v="${v}" aria-pressed="${ui[k]===v}">${l}</button>`;
   let old=null;try{if(!db.migrated){const o=JSON.parse(localStorage.getItem(OLD_KEY)||'null');if(o?.books?.length)old=o.books.length}}catch(e){}
-  return`<header class="top"><h1>我的書房</h1><button class="add" data-add aria-label="新增書">＋</button></header>
+  const viewToggle=`<div class="vt" role="group" aria-label="排列方式"><button data-view="grid" aria-pressed="${ui.view==='grid'}" aria-label="封面">${ICON.grid}</button><button data-view="list" aria-pressed="${ui.view==='list'}" aria-label="清單">${ICON.list}</button></div>`;
+  let body='';
+  if(!n)body=`<div class="empty"><div class="emptycv">${coverHtml({title:'我的書房',author:'第一本書',genre:'文學小說'},'lg')}</div><p>書房還是空的。<br>掃一下書背條碼，或拍封面，就能把書加進來。</p><div class="btns" style="justify-content:center"><button class="btn" data-scan="home-add">${ICON.scan}掃條碼</button><button class="btn ghost" data-photo="new">${ICON.cam}拍封面</button></div><p><button class="btn sm ghost" data-guide>看教學</button></p></div>`;
+  else if(ui.q)body=`<div id="verdict">${verdictHtml(list)}</div>${shelfHtml(items)}`;
+  else{
+    // "keep reading" rail: books in progress, then the ones that have waited longest
+    const reading=db.books.filter(b=>b.status==='reading');
+    const pick=db.pick&&getBook(db.pick.id);
+    const waiting=[...(pick&&pick.status==='unread'?[pick]:[]),...[...unread].sort((a,b)=>addedDate(a).localeCompare(addedDate(b)))].filter((b,i,a)=>a.indexOf(b)===i).slice(0,8);
+    const rail=[...reading.map(b=>[b,'<span class="gs" style="color:var(--reading)">閱讀中</span>']),...waiting.map(b=>[b,`<span class="gs">放了 ${daysSince(addedDate(b))} 天</span>`])];
+    const counts={};db.books.forEach(b=>{const g=genreOf(b);counts[g]=(counts[g]||0)+1});
+    const cats=Object.entries(counts).sort((a,b)=>b[1]-a[1]||zhSort(a[0],b[0]));
+    const repr=g=>db.books.filter(b=>genreOf(b)===g).sort((a,b)=>!!coverSrc(b)-!!coverSrc(a)||(b.added||0)-(a.added||0))[0];
+    body=`${rail.length?`<h2 class="sec">${reading.length?'繼續閱讀':'該讀了'}<button class="link" data-tab-go="plan">讀書計畫 ›</button></h2>
+      <div class="rail">${rail.map(([b,s])=>`<button class="ri" data-open="${esc(b.id)}">${coverHtml(b,'fill')}<span class="gt">${esc(b.title)}</span>${s}</button>`).join('')}</div>`:''}
+    ${cats.length>1?`<h2 class="sec">類別</h2><div class="cats">${cats.map(([g,c])=>`<button class="cat" data-genre="${esc(g)}" aria-pressed="${ui.genre===g}"><span class="box">${coverHtml({...repr(g),vol:0},'md')}</span><b>${esc(g)}</b><span>${c} 本</span></button>`).join('')}</div>`:''}
+    <h2 class="sec" id="shelfSec">我的書櫃 <small>${list.length===n?`${n} 本`:`${list.length} / ${n} 本`}</small>${viewToggle}</h2>
+    <div class="chips" role="group" aria-label="篩選">${ui.genre?`<button class="chip" data-genre="${esc(ui.genre)}" aria-pressed="true">${esc(ui.genre)} ✕</button>`:''}${chip('status','','全部')}${Object.entries(STATUS).map(([k,l])=>chip('status',k,l)).join('')}${loans?chip('status','loan',`借出中 ${loans}`):''}</div>
+    <div class="tools"><select id="fFmt" aria-label="格式"><option value="">所有格式</option><option value="paper" ${ui.fmt==='paper'?'selected':''}>紙本</option><option value="ebook-any" ${ui.fmt==='ebook-any'?'selected':''}>所有電子書</option>${usedFormats().filter(([k])=>k!=='paper').map(([k,l])=>`<option value="${k}" ${ui.fmt===k?'selected':''}>${l}</option>`).join('')}</select>
+      <select id="fSort" aria-label="排序">${[['recent','最近加入'],['title','書名'],['author','作者'],['oldest','放最久']].map(([k,l])=>`<option value="${k}" ${ui.sort===k?'selected':''}>${l}</option>`).join('')}</select></div>
+    ${shelfHtml(items)||'<div class="empty">沒有符合條件的書</div>'}`;
+  }
+  return`<header class="top"><div><h1>我的書房</h1>${n?`<div class="small muted">${n} 本書・${unread.length} 本還沒讀</div>`:''}</div><button class="add" data-add aria-label="新增書">＋</button></header>
   ${old?`<div class="banner">舊的「旋律日記」書櫃裡有 <b>${old}</b> 本書，要搬進書房嗎？<div class="acts"><button class="btn sm" data-migrate>搬過來</button><button class="btn sm ghost" data-migrate-no>不用了</button></div></div>`:''}
-  <div class="search"><div class="search-box">
+  ${n?`<div class="search"><div class="search-box">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--muted);flex:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" placeholder="我有這本嗎？書名、作者、ISBN" value="${esc(ui.q)}" enterkeyhint="search">
     ${ui.q?`<button class="icon-btn" data-clear aria-label="清除">✕</button>`:''}
-    <button class="icon-btn solid" data-scan="home" aria-label="掃描書背條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button>
-  </div></div>
-  <div id="verdict">${verdictHtml(list)}</div>
-  ${ui.q?'':`<div class="stats"><div class="stat"><b>${n}</b><span>全部</span></div><div class="stat"><b>${count('unread')}</b><span>未讀</span></div><div class="stat"><b>${count('reading')}</b><span>閱讀中</span></div><div class="stat"><b>${count('done')}</b><span>讀完</span></div></div>`}
-  ${n?`${ui.q?'':`<div class="chips" role="group" aria-label="狀態">${chip('status','','全部')}${Object.entries(STATUS).map(([k,l])=>chip('status',k,l)).join('')}${loans?chip('status','loan',`借出中 ${loans}`):''}</div>`}
-  ${ui.q?'':`<div class="tools"><select id="fFmt" aria-label="格式"><option value="">所有格式</option><option value="paper" ${ui.fmt==='paper'?'selected':''}>紙本</option><option value="ebook-any" ${ui.fmt==='ebook-any'?'selected':''}>所有電子書</option>${usedFormats().filter(([k])=>k!=='paper').map(([k,l])=>`<option value="${k}" ${ui.fmt===k?'selected':''}>${l}</option>`).join('')}</select>
-    <select id="fGenre" aria-label="類別"><option value="">所有類別</option>${genres.map(g=>`<option ${ui.genre===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
-    <select id="fSort" aria-label="排序">${[['recent','最近加入'],['title','書名'],['author','作者'],['oldest','放最久']].map(([k,l])=>`<option value="${k}" ${ui.sort===k?'selected':''}>${l}</option>`).join('')}</select></div>`}
-  <div class="list">${items.map(it=>it.k!==undefined?seriesCard(it.k,it.books):bookRow(it)).join('')||(ui.q?'':'<div class="empty">沒有符合條件的書</div>')}</div>
-  ${items.some(it=>it.k!==undefined)?`<div class="legend"><span><i class="o" style="--c:var(--unread)"></i>未讀</span><span><i style="--c:var(--reading)"></i>閱讀中</span><span><i style="--c:var(--done)"></i>讀完</span><span><i class="o" style="--c:var(--muted);border-style:dashed"></i>沒有這集</span></div>`:''}`
-  :`<div class="empty"><p>書房還是空的。<br>先掃幾本紙本書的條碼，或到「設定」一次貼上電子書清單。</p><button class="btn" data-add>加第一本書</button> <button class="btn ghost" data-guide>看教學</button></div>`}`;
+    <button class="icon-btn" data-photo="new" aria-label="拍封面新增">${ICON.cam}</button>
+    <button class="icon-btn solid" data-scan="home" aria-label="掃描書背條碼">${ICON.scan}</button>
+  </div></div>`:''}
+  ${body}`;
 }
+
+/* ---------- one book ---------- */
+function viewBook(b){
+  const g=genreColor(genreOf(b)),key=b.series?seriesKey(b):'';
+  const rows=[['格式',fmtNames(b)],['類別',genreOf(b)],['放在哪',(b.formats||[]).includes('paper')?b.location:''],['買的日期',b.bought],['開始讀',b.started],['讀完',b.finished],['ISBN',b.isbn],
+    ['評分',b.rating?'★'.repeat(b.rating)+'☆'.repeat(5-b.rating):'']].filter(r=>r[1]);
+  return`<header class="top bar-top"><button class="icon-btn" data-back aria-label="返回">${ICON.back}</button><button class="btn sm ghost" data-edit="${esc(b.id)}">編輯</button></header>
+  <div class="hero" style="--c:${g}">${coverHtml(b,'xl')}
+    <h1 class="bt">${esc(b.title)}</h1>${b.author?`<div class="muted">${esc(b.author)}</div>`:''}
+    ${key?`<button class="slink" data-series="${esc(key)}">${esc(b.series)}${b.vol?`・第 ${b.vol} 集`:''}・全套 ${seriesBooks(key).length} 本 ›</button>`:''}
+    <div class="btns" style="justify-content:center"><button class="btn sm ghost" data-photo="${esc(b.id)}">${ICON.cam}${coverSrc(b)?'換封面':'拍封面'}</button>${b.photo?`<button class="btn sm danger" data-unphoto="${esc(b.id)}">移除照片</button>`:''}</div>
+  </div>
+  <div class="mode stseg" role="group" aria-label="狀態">${Object.entries(STATUS).map(([k,l])=>`<button data-setst="${k}" aria-pressed="${b.status===k}">${l}</button>`).join('')}</div>
+  <div class="card info">${rows.map(([k,v])=>`<div class="kv"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}${b.note?`<div class="kv note"><span>備註</span><p>${esc(b.note)}</p></div>`:''}</div>
+  <div class="card info" style="margin-top:12px">${b.loan?`<div class="kv"><span>借給</span><b>${esc(b.loan.to||'?')}<small class="muted">・${daysSince(b.loan.date)} 天</small></b><button class="btn sm ghost" data-return="${esc(b.id)}">還了</button></div>`
+    :`<div class="kv"><span>借出</span><b class="muted" style="font-weight:400">在家</b><button class="btn sm ghost" data-edit="${esc(b.id)}" data-focus="loanTo">借給別人</button></div>`}</div>`;
+}
+
+/* ---------- one series ---------- */
+function viewSeries(key){
+  const s=seriesInfo(key),pct=Math.round(s.done/s.all.length*100);
+  return`<header class="top bar-top"><button class="icon-btn" data-back aria-label="返回">${ICON.back}</button><span></span></header>
+  <div class="shead">${coverHtml({...s.first,vol:0},'lg')}<div><h1 class="bt" style="text-align:left">${esc(s.first.series)}</h1><div class="muted">${esc(s.first.author||'')}</div>
+    <div class="small muted" style="margin-top:6px">共 ${s.all.length} 本${s.max?`・到第 ${s.max} 集`:''}${s.missing?`・<span style="color:var(--warn)">缺 ${s.missing} 集</span>`:''}</div>
+    <div class="bar"><i style="width:${pct}%"></i></div><div class="small">讀完 ${s.done} / ${s.all.length}</div></div></div>
+  <div class="vols" style="padding:14px 0 4px">${volChips(key)}</div>${legend}
+  <div class="btns"><button class="btn" data-next="${esc(key)}">＋ 第 ${s.max+1} 集</button><button class="btn ghost" data-setfill="${esc(key)}">一次補好幾集</button></div>
+  <h2 class="sec">每一集</h2><div class="grid">${s.all.map(gridItem).join('')}</div>`;
+}
+
 function verdictHtml(list){
   if(!ui.q.trim())return'';
   const has=list.length,o=ui.online;
@@ -462,20 +634,20 @@ function viewPlan(){
     <div class="nudge muted">${weeks?`一週讀一本，要 ${weeks>=52?(weeks/52).toFixed(1)+' 年':weeks+' 週'}才讀得完。`:'沒有未讀的書，太厲害了！'}</div></div>
 
   <h2 class="sec">今天讀哪一本？</h2>
-  <div class="card">${unread.length?(pickOk?`<div class="pick">${coverHtml(pick)}<div class="meta"><h3>${esc(pick.title)}</h3><div class="muted small">${esc(pick.author||'')}${pick.author?' · ':''}${(pick.formats||[]).map(f=>FORMATS[f]).join('、')}</div><div class="muted small">已經放了 ${daysSince(addedDate(pick))} 天${pick.location?` · 📍${esc(pick.location)}`:''}</div></div></div>
+  <div class="card">${unread.length?(pickOk?`<div class="pick">${coverHtml(pick,'md')}<div class="meta"><h3>${esc(pick.title)}</h3><div class="muted small">${esc(pick.author||'')}${pick.author?' · ':''}${(pick.formats||[]).map(f=>FORMATS[f]).join('、')}</div><div class="muted small">已經放了 ${daysSince(addedDate(pick))} 天${pick.location?` · 📍${esc(pick.location)}`:''}</div></div></div>
       <div class="btns"><button class="btn" data-start="${esc(pick.id)}">就讀這本</button><button class="btn ghost" data-pick>換一本</button></div>`
     :`<p style="margin:0 0 4px">從 ${unread.length} 本未讀的書裡，隨機幫你挑一本。</p><div class="btns"><button class="btn" data-pick>幫我挑</button></div>`)
     :'<p class="muted" style="margin:0">沒有未讀的書可以挑。</p>'}</div>
 
   <h2 class="sec">閱讀中 <small>${reading.length} 本</small></h2>
-  <div class="card">${reading.length?reading.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">${b.started?`${daysSince(b.started)} 天前開始`:''}</span></button><button class="btn sm" data-finish="${esc(b.id)}">讀完了</button></div>`).join(''):'<p class="muted" style="margin:0">現在沒有在讀的書。挑一本開始吧！</p>'}</div>
+  <div class="card">${reading.length?reading.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-open="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">${b.started?`${daysSince(b.started)} 天前開始`:''}</span></button><button class="btn sm" data-finish="${esc(b.id)}">讀完了</button></div>`).join(''):'<p class="muted" style="margin:0">現在沒有在讀的書。挑一本開始吧！</p>'}</div>
 
   <h2 class="sec">${y} 年目標 <small>${doneY} / ${goal} 本</small></h2>
   <div class="card"><div class="bar"><i style="width:${pct}%"></i></div><div class="nudge">${nudge}</div>${buyNote?`<div class="nudge muted">${buyNote}</div>`:''}<div class="small muted" style="margin-top:6px">目標可以在「設定」改。</div></div>
 
-  ${oldest.length?`<h2 class="sec">放最久的未讀</h2><div class="card">${oldest.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">放了 ${daysSince(addedDate(b))} 天 · ${(b.formats||[]).map(f=>FORMATS[f]).join('、')}</span></button><button class="btn sm ghost" data-start="${esc(b.id)}">開始讀</button></div>`).join('')}</div>`:''}
+  ${oldest.length?`<h2 class="sec">放最久的未讀</h2><div class="card">${oldest.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-open="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">放了 ${daysSince(addedDate(b))} 天 · ${(b.formats||[]).map(f=>FORMATS[f]).join('、')}</span></button><button class="btn sm ghost" data-start="${esc(b.id)}">開始讀</button></div>`).join('')}</div>`:''}
 
-  ${loans.length?`<h2 class="sec">借出中</h2><div class="card">${loans.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-edit="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">借給 ${esc(b.loan.to||'?')}${b.loan.date?` · ${daysSince(b.loan.date)} 天`:''}</span></button><button class="btn sm ghost" data-return="${esc(b.id)}">還了</button></div>`).join('')}</div>`:''}`;
+  ${loans.length?`<h2 class="sec">借出中</h2><div class="card">${loans.map(b=>`<div class="line-item">${coverHtml(b)}<button class="meta" style="border:0;background:none;text-align:left;padding:0" data-open="${esc(b.id)}"><b>${esc(b.title)}</b><span class="sub">借給 ${esc(b.loan.to||'?')}${b.loan.date?` · ${daysSince(b.loan.date)} 天`:''}</span></button><button class="btn sm ghost" data-return="${esc(b.id)}">還了</button></div>`).join('')}</div>`:''}`;
 }
 
 /* ---------- settings ---------- */
@@ -527,9 +699,19 @@ function refreshShelf(){
 app.addEventListener('click',e=>{
   const t=e.target.closest('button,[data-edit]');if(!t)return;
   const d=t.dataset;
-  if(d.edit)return editBook(d.edit);
-  if(d.toggle!==undefined){ui.open.has(d.toggle)?ui.open.delete(d.toggle):ui.open.add(d.toggle);return render()}
+  if(d.open)return go('book',d.open);
+  if(d.series!==undefined)return go('series',d.series);
+  if('back'in d)return back();
+  if(d.edit){editBook(d.edit);if(d.focus)setTimeout(()=>form.elements[d.focus]?.focus(),60);return}
   if(d.next!==undefined)return addNext(d.next);
+  if(d.setfill!==undefined){const s=seriesInfo(d.setfill);return openSet({series:s.first.series,author:s.first.author,from:s.max+1,formats:s.first.formats,location:s.first.location})}
+  if(d.view){ui.view=db.view=d.view;save();return render()}
+  if(d.genre!==undefined){ui.genre=ui.genre===d.genre?'':d.genre;render();if(ui.genre)$('#shelfSec')?.scrollIntoView({behavior:'smooth',block:'start'});return}
+  if(d.tabGo)return go(d.tabGo);
+  if(d.setst){const b=getBook(ui.bookId);if(!b)return;b.status=d.setst;if(b.status==='reading'&&!b.started)b.started=today();if(b.status==='done'&&!b.finished){b.finished=today();toast(`讀完《${b.title}》🎉`)}save();return render()}
+  if(d.photo==='new')return pickPhoto(data=>{editBook(null,{_photo:data});toast('封面拍好了！接著用「掃描文字」或打字輸入書名');setTimeout(()=>form.elements.q?.focus(),80)});
+  if(d.photo){const b=getBook(d.photo);return pickPhoto(async data=>{const k=b.photo||'c_'+uid();await putCover(k,data);b.photo=k;save();render();toast('封面換好了')})}
+  if(d.unphoto){const b=getBook(d.unphoto);delCover(b.photo);b.photo='';save();return render()}
   if(d.f){ui[d.f]=ui[d.f]===d.v&&d.v?'':d.v;return render()}
   if('add'in d)return editBook(null);
   if('addQ'in d){const o=ui.online;return editBook(null,looksIsbn(ui.q)?{isbn:isbn13(ui.q),title:o?.title||'',author:o?.author||'',cover:o?.cover||'',pages:o?.pages||'',hint:o?.hint||''}:{title:ui.q.trim()})}
@@ -546,7 +728,7 @@ app.addEventListener('click',e=>{
   if('migrateNo'in d){db.migrated=true;save();return render()}
   if('bulk'in d)return openBulk();
   if('set'in d)return openSet();
-  if('export'in d)return download(`我的書房-${today()}.json`,JSON.stringify({app:'my-bookroom',version:1,...db},null,1),'application/json');
+  if('export'in d){const covers={};db.books.forEach(b=>{if(b.photo&&COV.has(b.photo))covers[b.photo]=COV.get(b.photo)});return download(`我的書房-${today()}.json`,JSON.stringify({app:'my-bookroom',version:2,...db,covers}),'application/json')}
   if('csv'in d)return exportCsv();
   if('guide'in d)return startWelcome();
   if('wipe'in d){if(confirm(`確定要刪除全部 ${db.books.length} 本書嗎？建議先匯出備份。`)){db.books=[];db.pick=null;save();toast('已清空');render()}}
@@ -608,9 +790,11 @@ const closeBtn=`<button type="button" class="icon-btn" data-close aria-label="�
 
 function editBook(id,preset={}){
   const b=getBook(id)||{title:'',author:'',series:'',vol:'',formats:['paper'],status:'unread',bought:today(),finished:'',started:'',location:'',isbn:'',cover:'',pages:'',rating:0,note:'',genre:'',hint:'',loan:null,...preset};
+  form._photo=preset._photo||null;form._clear=false;form._oldPhoto=b.photo||'';
   openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯':'加一本書'}</h3>${closeBtn}</div>
    ${id?'':`<div class="mode"><button type="button" aria-pressed="true">一本</button><button type="button" data-set aria-pressed="false">一整套</button><button type="button" data-bulk aria-pressed="false">貼上清單</button></div>
-   <div class="field"><span>搜尋書名或 ISBN，自動帶入作者、封面</span><div class="search-row"><input name="q" placeholder="例如：被討厭的勇氣" enterkeyhint="search" value="${esc(preset.isbn||'')}"><button type="button" class="icon-btn solid" data-scan="sheet" aria-label="掃描條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="results"></div></div>`}
+   <div class="field"><span>搜尋書名或 ISBN，自動帶入作者、封面</span><div class="search-row"><input name="q" placeholder="例如：被討厭的勇氣" enterkeyhint="search" value="${esc(preset.isbn||'')}"><button type="button" class="icon-btn solid" data-scan="sheet" aria-label="掃描條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="hint">📱 iPhone 小技巧：點一下輸入框，選「掃描文字」，對準封面上的書名就能直接輸入。</div><div class="results"></div></div>`}
+   <div class="cvrow"><span id="cvPrev"></span><div><div class="small muted">封面</div><div class="btns" style="margin-top:6px"><button type="button" class="btn sm ghost" data-sphoto>${ICON.cam}拍封面</button><button type="button" class="btn sm danger" data-sunphoto hidden>移除照片</button></div><div class="hint" style="margin-top:6px">沒有也沒關係，會自動做一個封面。</div></div></div>
    <label class="field"><span>書名</span><input name="title" value="${esc(b.title)}" required></label>
    <div class="dup" id="dup"></div>
    <label class="field"><span>作者</span><input name="author" value="${esc(b.author)}"></label>
@@ -627,13 +811,19 @@ function editBook(id,preset={}){
    <label class="field"><span>封面圖片網址</span><input name="cover" inputmode="url" value="${esc(b.cover)}"></label>
    <input type="hidden" name="hint" value="${esc(b.hint)}"><input type="hidden" name="pages" value="${esc(b.pages)}">
    <div class="sheet-foot">${id?'<button type="button" class="btn danger" data-delete>刪除</button>':'<span></span>'}<button class="btn">儲存</button></div>`);
-  showDup();
+  showDup();updatePreview();
   if(!id&&preset.isbn&&!preset.title)searchBooks();
 }
 function showDup(){
   const box=$('#dup',form);if(!box)return;
   const s=similar(form.elements.title?.value,form.elements.isbn?.value,form.dataset.id).slice(0,4);
   box.innerHTML=s.length?`⚠ 書房裡已經有：${s.map(b=>`《${esc(b.title)}》（${(b.formats||[]).map(f=>FORMATS[f]).join('、')}・${STATUS[b.status]}）`).join('、')}`:'';
+}
+function updatePreview(){
+  const box=$('#cvPrev',form);if(!box)return;const f=form.elements;
+  const src=form._photo||(!form._clear&&form._oldPhoto&&COV.get(form._oldPhoto))||safeUrl(f.cover.value)||'';
+  box.innerHTML=coverHtml({title:f.title.value||'書名',author:f.author.value,series:f.series.value,vol:+f.vol.value||0,genre:f.genre.value||classify({title:f.title.value,author:f.author.value,series:f.series.value,hint:f.hint.value}),_src:src},'lg');
+  const un=$('[data-sunphoto]',form);if(un)un.hidden=!(form._photo||(!form._clear&&form._oldPhoto));
 }
 function updateGenreHint(){
   const o=form.elements.genre?.querySelector('option[value=""]');
@@ -643,6 +833,7 @@ form.addEventListener('input',e=>{
   const n=e.target.name;
   if(n==='title'||n==='isbn')showDup();
   if(['title','author','series'].includes(n))updateGenreHint();
+  if(['title','author','series','vol','cover','genre'].includes(n))updatePreview();
   if(n==='finished'&&e.target.value){const r=form.querySelector('input[name=status][value=done]');if(r)r.checked=true}
 });
 form.addEventListener('keydown',e=>{if(e.target.name==='q'&&e.key==='Enter'){e.preventDefault();searchBooks()}});
@@ -654,8 +845,10 @@ form.addEventListener('click',e=>{
   if(d.pick!==undefined)return pickResult(+d.pick);
   if('set'in d)return openSet();
   if('bulk'in d)return openBulk();
+  if('sphoto'in d)return pickPhoto(data=>{form._photo=data;updatePreview()});
+  if('sunphoto'in d){form._photo=null;form._clear=true;return updatePreview()}
   if('returned'in d){form.elements.loanTo.value='';form.elements.loanDate.value='';t.remove();return}
-  if('delete'in d){const b=getBook(form.dataset.id);if(b&&confirm(`刪除《${b.title}》？`)){db.books=db.books.filter(x=>x.id!==b.id);save();sheet.close();toast('已刪除');render()}}
+  if('delete'in d){const b=getBook(form.dataset.id);if(b&&confirm(`刪除《${b.title}》？`)){db.books=db.books.filter(x=>x.id!==b.id);delCover(b.photo);save();sheet.close();toast('已刪除');if(ui.tab==='book')back();else render()}}
 });
 async function searchBooks(){
   const q=form.elements.q?.value.trim(),box=$('.results',form);if(!q||!box)return;
@@ -675,7 +868,7 @@ function pickResult(i){
   f.hint.value=v.hint||'';f.pages.value=v.pages||'';if(v.isbn)f.isbn.value=v.isbn;
   const s=guessSeries(v.title);if(s&&!f.series.value){f.series.value=s.series;f.vol.value=s.vol}
   $('.results',form).innerHTML=`<span class="small muted">已帶入《${esc(v.title)}》</span>`;
-  showDup();updateGenreHint();
+  showDup();updateGenreHint();updatePreview();
 }
 form.addEventListener('submit',e=>{
   e.preventDefault();
@@ -694,8 +887,9 @@ form.addEventListener('submit',e=>{
     loan:loanTo?{to:loanTo,date:f.loanDate.value||today()}:null,added:old?.added||Date.now()};
   if(status==='reading'&&!rec.started)rec.started=today();
   rec.genre=f.genre.value||classify(rec);
+  if(form._photo){rec.photo=rec.photo||'c_'+uid();putCover(rec.photo,form._photo)}
+  else if(form._clear&&rec.photo){delCover(rec.photo);rec.photo=''}
   db.books=db.books.filter(x=>x.id!==id).concat(rec);save();sheet.close();toast(old?'已更新':'已加入書房');
-  if(rec.series)ui.open.add(norm(rec.series));
   render();
 });
 function addNext(key){
@@ -704,16 +898,16 @@ function addNext(key){
 }
 
 /* ---------- a whole set at once ---------- */
-function openSet(){
+function openSet(pre={}){
   openSheet('set','',`<div class="sheet-head"><h3>一次加一整套</h3>${closeBtn}</div>
    <p class="small muted" style="margin:0">例如漫畫《鬼滅之刃》第 1 到 23 集。已經有的集數會自動跳過。</p>
-   <label class="field"><span>系列名稱</span><input name="series" list="seriesL2" required placeholder="鬼滅之刃"></label>
+   <label class="field"><span>系列名稱</span><input name="series" list="seriesL2" required placeholder="鬼滅之刃" value="${esc(pre.series||'')}"></label>
    <datalist id="seriesL2">${seriesList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
-   <label class="field"><span>作者</span><input name="author"></label>
-   <div class="grid2"><label class="field"><span>從第幾集</span><input name="from" type="number" min="0" inputmode="numeric" value="1"></label><label class="field"><span>到第幾集</span><input name="to" type="number" min="1" inputmode="numeric" placeholder="23"></label></div>
+   <label class="field"><span>作者</span><input name="author" value="${esc(pre.author||'')}"></label>
+   <div class="grid2"><label class="field"><span>從第幾集</span><input name="from" type="number" min="0" inputmode="numeric" value="${esc(pre.from||1)}"></label><label class="field"><span>到第幾集</span><input name="to" type="number" min="1" inputmode="numeric" placeholder="23"></label></div>
    <label class="field"><span>已經讀到第幾集（沒讀就空白）</span><input name="readTo" type="number" min="0" inputmode="numeric"></label>
-   <div class="field"><span>格式</span>${fmtChecks(['paper'])}</div>
-   <div class="grid2"><label class="field"><span>類別</span><select name="genre"><option value="">自動判斷</option>${[...GENRES,OTHER].map(g=>`<option>${g.k}</option>`).join('')}</select></label><label class="field"><span>放在哪（紙本）</span><input name="location" list="locL2"></label></div>
+   <div class="field"><span>格式</span>${fmtChecks(pre.formats||['paper'])}</div>
+   <div class="grid2"><label class="field"><span>類別</span><select name="genre"><option value="">自動判斷</option>${[...GENRES,OTHER].map(g=>`<option>${g.k}</option>`).join('')}</select></label><label class="field"><span>放在哪（紙本）</span><input name="location" list="locL2" value="${esc(pre.location||'')}"></label></div>
    <datalist id="locL2">${locList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
    <div class="sheet-foot"><span></span><button class="btn">加入</button></div>`);
 }
@@ -728,7 +922,7 @@ function saveSet(){
     const done=v<=readTo,rec={id:uid(),title:`${series} ${v}`,...base,vol:v,status:done?'done':'unread',bought:today(),finished:'',isbn:'',cover:'',note:'',hint:'',loan:null,added:ts+v,genreAuto:!f.genre.value};
     rec.genre=f.genre.value||classify(rec);if(!f.genre.value&&rec.genre==='其他')rec.genre='漫畫',rec.genreAuto=true;
     db.books.push(rec);added++}
-  save();sheet.close();ui.open.add(key);toast(added?`加入了 ${added} 集${to-from+1-added?`（${to-from+1-added} 集原本就有）`:''}`:'這些集數都已經有了');go('shelf');
+  save();sheet.close();toast(added?`加入了 ${added} 集${to-from+1-added?`（${to-from+1-added} 集原本就有）`:''}`:'這些集數都已經有了');go('series',key);
 }
 
 /* ---------- paste a list ---------- */
@@ -794,6 +988,7 @@ scanDlg.addEventListener('cancel',stopScan);
 function onScanned(ctx,code){
   if(navigator.vibrate)navigator.vibrate(60);
   if(ctx==='sheet'&&sheet.open&&form.elements.q){form.elements.q.value=code;form.elements.isbn.value=code;showDup();searchBooks();return}
+  if(ctx==='home-add')return editBook(null,{isbn:code});
   if(ui.tab!=='shelf'){ui.tab='shelf';location.hash='shelf'}
   ui.q=code;ui.online=null;render();lookupIsbnForHome(code);
 }
@@ -813,7 +1008,8 @@ function importJson(file){
   if(!file)return;const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.books))throw 0;
     if(!confirm(`用備份裡的 ${d.books.length} 本書取代目前的 ${db.books.length} 本？`))return;
-    db={books:d.books,goal:d.goal||12,pick:null,migrated:true};save();toast('已還原');render()}catch(e){toast('這不是書房的備份檔')}};
+    const keep={...db};db={...keep,books:d.books,goal:d.goal||keep.goal,formatsUsed:d.formatsUsed||keep.formatsUsed,locations:d.locations||keep.locations,pick:null,migrated:true,setup:true};
+    Object.entries(d.covers||{}).forEach(([k,v])=>{if(/^data:image\//.test(v))putCover(k,v)});save();toast('已還原');render()}catch(e){toast('這不是書房的備份檔')}};
   r.readAsText(file);
 }
 function migrate(){
@@ -874,6 +1070,7 @@ function viewWelcome(){
     const how=(icon,title,steps,act,label)=>`<div class="how"><h3><span aria-hidden="true">${icon}</span>${title}</h3><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol>${act?`<button class="btn sm" data-wzdo="${act}">${label}</button>`:''}</div>`;
     body=`<h1>開始把書加進來</h1><p class="lead">設定好了！這幾種方法挑順手的用。這一頁之後可以在「設定 → 使用教學」再打開。</p>
     ${how('📷','紙本書：掃條碼',['按書房右上角的 ＋','按搜尋框旁的條碼按鈕，第一次會問相機權限，請按允許','對準書背 <b>978</b> 開頭的條碼，書名、作者、封面會自動帶入','選格式、狀態、放在哪，按儲存'],'scan','現在掃第一本')}
+    ${how('📸','拍封面',['按書房搜尋框旁的相機，直接拍書的封面','照片會變成這本書的封面','iPhone 可以點書名欄位，選「掃描文字」，對準封面上的書名，不用自己打字'],'')}
     ${how('📚','漫畫、套書：一次加一整套',['按 ＋ 後選「一整套」','填系列名稱和集數，例如鬼滅之刃第 1 到 23 集','填已經讀到第幾集，前面的會自動標成讀完','之後買新的一集，在書房的系列卡片按「＋」就好'],'set','加一整套')}
     ${ebooks.length?how('📱',`電子書（${ebooks.join('、')}）：貼上清單`,['用瀏覽器打開電子書網站的書櫃頁面，選取書名複製','回到這裡，按 ＋ 後選「貼上清單」','一行一本，可以寫「書名 / 作者」；不是書名的行先刪掉','選這批是哪個平台，按加入（重複的會自動跳過）'],'bulk','貼上清單'):''}
     ${how('🔍','在書店：我有這本嗎？',['打開書房，在最上面的搜尋框打書名，或按條碼按鈕掃一下','<span style="color:var(--warn)">橘色</span>：你已經有了','<span style="color:var(--accent)">綠色</span>：書房裡沒有，可以放心買'])}
@@ -913,7 +1110,7 @@ app.addEventListener('keydown',e=>{if(ui.tab==='welcome'&&e.target.id==='wzLoc'&
 
 function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2600)}
 
-if(!db.setup)startWelcome(true);else render();
+Promise.race([loadCovers(),new Promise(r=>setTimeout(r,1500))]).then(()=>{if(!db.setup)startWelcome(true);else{Object.assign(ui,parseHash());render()}});
 </script>
 </body>
 </html>
