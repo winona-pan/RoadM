@@ -183,6 +183,38 @@ dialog.scan{border:0;padding:0;background:#000;color:#fff;width:100%;max-width:5
 .scan .bottom button{border:0;border-radius:10px;padding:8px 14px;background:#fff;color:#000;font-weight:700}
 
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+body.welcoming .tabbar{display:none}
+.wz{min-height:calc(100dvh - 40px);display:flex;flex-direction:column;padding-top:calc(18px + env(safe-area-inset-top,0px))}
+.wz-dots{display:flex;gap:6px;justify-content:center;margin-bottom:22px}
+.wz-dots i{width:7px;height:7px;border-radius:99px;background:var(--line);transition:width .2s}
+.wz-dots i.on{width:22px;background:var(--accent)}
+.wz h1{font:900 28px/1.3 var(--display);margin:0 0 6px;text-wrap:balance}
+.wz .lead{color:var(--muted);margin:0 0 18px}
+.wz .body{flex:1}
+.wz-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px))}
+.wz-foot .btn{padding:12px 22px;font-size:16px}
+.feat{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.feat:first-child{border-top:0}
+.feat .ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:20px;flex:none}
+.feat b{display:block}
+.feat p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.opt{display:flex;align-items:center;gap:12px;width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.opt input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt b{display:block}.opt span.small{display:block}
+.tagbox{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 6px 5px 12px;background:var(--accent-soft);color:var(--accent);font-size:14px;border:0}
+.tag b{font-weight:400;opacity:.7;padding:0 4px}
+.tag.sug{background:transparent;border:1px dashed var(--line);color:var(--muted);padding-right:12px}
+.goalpick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.goalpick button{flex:1;min-width:64px;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 0;font:900 22px/1 var(--display)}
+.goalpick button small{display:block;font:400 12px/1.4 var(--body);color:var(--muted);margin-top:4px}
+.goalpick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.how{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:10px}
+.how h3{margin:0 0 4px;font-size:16px;display:flex;gap:8px;align-items:center}
+.how ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--muted)}
+.how ol li{margin:2px 0}
+.how .btn{margin-top:10px}
 textarea.bulk{min-height:180px;font-size:15px}
 </style>
 </head>
@@ -280,8 +312,9 @@ function guessSeries(t,loose){
 
 /* ---------- storage ---------- */
 const KEY='my-bookroom-v1', OLD_KEY='melody-diary-v1';
-let db={books:[],goal:12,pick:null,migrated:false};
+let db={books:[],goal:12,pick:null,migrated:false,setup:false,formatsUsed:Object.keys(FORMATS),locations:[]};
 try{const raw=localStorage.getItem(KEY);if(raw)db=Object.assign(db,JSON.parse(raw))}catch(e){}
+if(!db.setup&&db.books.length)db.setup=true; // existing libraries skip the welcome
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('無法儲存：瀏覽器封鎖了本機儲存空間')}};
 const getBook=id=>db.books.find(b=>b.id===id);
 const addedDate=b=>b.bought||dateOf(b.added||Date.now());
@@ -307,13 +340,15 @@ function similar(title,isbn,exceptId){
 const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',open:new Set(),online:null};
 function go(tab){ui.tab=tab;location.hash=tab;render();window.scrollTo(0,0)}
 $$('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.tab)));
-window.addEventListener('hashchange',()=>{const t=location.hash.slice(1);if(t&&t!==ui.tab&&['shelf','plan','settings'].includes(t)){ui.tab=t;render()}});
+window.addEventListener('hashchange',()=>{const t=location.hash.slice(1);if(t&&t!==ui.tab&&['shelf','plan','settings'].includes(t)&&db.setup){ui.tab=t;render()}});
 {const t=location.hash.slice(1);if(['shelf','plan','settings'].includes(t))ui.tab=t}
 
 function render(){
   $$('.tab').forEach(t=>t.dataset.tab===ui.tab?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
   const app=$('#app');
-  if(ui.tab==='plan')app.innerHTML=viewPlan();
+  document.body.classList.toggle('welcoming',ui.tab==='welcome');
+  if(ui.tab==='welcome')app.innerHTML=viewWelcome();
+  else if(ui.tab==='plan')app.innerHTML=viewPlan();
   else if(ui.tab==='settings')app.innerHTML=viewSettings();
   else{app.innerHTML=viewShelf();}
 }
@@ -381,12 +416,12 @@ function viewShelf(){
   <div id="verdict">${verdictHtml(list)}</div>
   ${ui.q?'':`<div class="stats"><div class="stat"><b>${n}</b><span>全部</span></div><div class="stat"><b>${count('unread')}</b><span>未讀</span></div><div class="stat"><b>${count('reading')}</b><span>閱讀中</span></div><div class="stat"><b>${count('done')}</b><span>讀完</span></div></div>`}
   ${n?`${ui.q?'':`<div class="chips" role="group" aria-label="狀態">${chip('status','','全部')}${Object.entries(STATUS).map(([k,l])=>chip('status',k,l)).join('')}${loans?chip('status','loan',`借出中 ${loans}`):''}</div>`}
-  ${ui.q?'':`<div class="tools"><select id="fFmt" aria-label="格式"><option value="">所有格式</option><option value="paper" ${ui.fmt==='paper'?'selected':''}>紙本</option><option value="ebook-any" ${ui.fmt==='ebook-any'?'selected':''}>所有電子書</option>${Object.entries(FORMATS).filter(([k])=>k!=='paper').map(([k,l])=>`<option value="${k}" ${ui.fmt===k?'selected':''}>${l}</option>`).join('')}</select>
+  ${ui.q?'':`<div class="tools"><select id="fFmt" aria-label="格式"><option value="">所有格式</option><option value="paper" ${ui.fmt==='paper'?'selected':''}>紙本</option><option value="ebook-any" ${ui.fmt==='ebook-any'?'selected':''}>所有電子書</option>${usedFormats().filter(([k])=>k!=='paper').map(([k,l])=>`<option value="${k}" ${ui.fmt===k?'selected':''}>${l}</option>`).join('')}</select>
     <select id="fGenre" aria-label="類別"><option value="">所有類別</option>${genres.map(g=>`<option ${ui.genre===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
     <select id="fSort" aria-label="排序">${[['recent','最近加入'],['title','書名'],['author','作者'],['oldest','放最久']].map(([k,l])=>`<option value="${k}" ${ui.sort===k?'selected':''}>${l}</option>`).join('')}</select></div>`}
   <div class="list">${items.map(it=>it.k!==undefined?seriesCard(it.k,it.books):bookRow(it)).join('')||(ui.q?'':'<div class="empty">沒有符合條件的書</div>')}</div>
   ${items.some(it=>it.k!==undefined)?`<div class="legend"><span><i class="o" style="--c:var(--unread)"></i>未讀</span><span><i style="--c:var(--reading)"></i>閱讀中</span><span><i style="--c:var(--done)"></i>讀完</span><span><i class="o" style="--c:var(--muted);border-style:dashed"></i>沒有這集</span></div>`:''}`
-  :`<div class="empty"><p>書房還是空的。<br>先掃幾本紙本書的條碼，或到「設定」一次貼上電子書清單。</p><button class="btn" data-add>加第一本書</button> <button class="btn ghost" data-demo>看範例</button></div>`}`;
+  :`<div class="empty"><p>書房還是空的。<br>先掃幾本紙本書的條碼，或到「設定」一次貼上電子書清單。</p><button class="btn" data-add>加第一本書</button> <button class="btn ghost" data-guide>看教學</button></div>`}`;
 }
 function verdictHtml(list){
   if(!ui.q.trim())return'';
@@ -448,6 +483,7 @@ function viewSettings(){
   let old=0;try{const o=JSON.parse(localStorage.getItem(OLD_KEY)||'null');old=o?.books?.length||0}catch(e){}
   return`<header class="top"><h1>設定</h1></header>
   <div class="card set">
+    <div class="line-item"><span>使用教學與初始設定<br><span class="small muted">格式、書櫃位置、怎麼加書</span></span><button class="btn sm" data-guide>打開</button></div>
     <div class="line-item"><span>今年想讀完幾本</span><input type="number" id="goal" min="1" max="999" inputmode="numeric" value="${esc(db.goal)}"></div>
     <div class="line-item"><span>一次貼上書單<br><span class="small muted">讀墨、Kobo、Kindle 的書名清單</span></span><button class="btn sm ghost" data-bulk>貼上</button></div>
     <div class="line-item"><span>一次加一整套<br><span class="small muted">漫畫、系列小說</span></span><button class="btn sm ghost" data-set>新增</button></div>
@@ -464,7 +500,6 @@ function viewSettings(){
   <div class="card set">
     <div class="line-item"><span>搜尋書籍資料用的 Google Books 金鑰（選填）</span></div>
     <input id="gbKey" placeholder="沒有也可以用" value="${esc(gbKey())}" style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;margin-bottom:8px">
-    <div class="line-item"><span>載入範例書</span><button class="btn sm ghost" data-demo>載入</button></div>
     <div class="line-item"><span style="color:var(--warn)">清空整個書房</span><button class="btn sm danger" data-wipe>清空</button></div>
   </div>`;
 }
@@ -513,7 +548,7 @@ app.addEventListener('click',e=>{
   if('set'in d)return openSet();
   if('export'in d)return download(`我的書房-${today()}.json`,JSON.stringify({app:'my-bookroom',version:1,...db},null,1),'application/json');
   if('csv'in d)return exportCsv();
-  if('demo'in d)return loadDemo();
+  if('guide'in d)return startWelcome();
   if('wipe'in d){if(confirm(`確定要刪除全部 ${db.books.length} 本書嗎？建議先匯出備份。`)){db.books=[];db.pick=null;save();toast('已清空');render()}}
 });
 
@@ -564,9 +599,10 @@ const sheet=$('#sheet'),form=$('#form');
 function openSheet(kind,id,html){form.dataset.kind=kind;form.dataset.id=id||'';form.innerHTML=html;sheet.showModal();form.scrollTop=0}
 sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});
 const seriesList=()=>[...new Set(db.books.map(b=>b.series).filter(Boolean))].sort(zhSort);
-const locList=()=>[...new Set(db.books.map(b=>b.location).filter(Boolean))].sort(zhSort);
+const locList=()=>[...new Set([...(db.locations||[]),...db.books.map(b=>b.location).filter(Boolean)])];
 const genreOptions=(b,auto)=>`<option value="">自動：${esc(auto)}</option>${[...GENRES,OTHER].map(g=>`<option ${b.genre&&!b.genreAuto&&b.genre===g.k?'selected':''}>${g.k}</option>`).join('')}`;
-const fmtChecks=sel=>`<div class="seg">${Object.entries(FORMATS).map(([k,l])=>`<label><input type="checkbox" name="fmt" value="${k}" ${sel.includes(k)?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
+const usedFormats=(extra=[])=>Object.entries(FORMATS).filter(([k])=>k==='paper'||(db.formatsUsed||[]).includes(k)||extra.includes(k));
+const fmtChecks=sel=>`<div class="seg">${usedFormats(sel).map(([k,l])=>`<label><input type="checkbox" name="fmt" value="${k}" ${sel.includes(k)?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
 const statusSeg=(cur,name='status')=>`<div class="seg">${Object.entries(STATUS).map(([k,l])=>`<label><input type="radio" name="${name}" value="${k}" ${cur===k?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
 const closeBtn=`<button type="button" class="icon-btn" data-close aria-label="關閉">✕</button>`;
 
@@ -700,7 +736,7 @@ function openBulk(){
   openSheet('bulk','',`<div class="sheet-head"><h3>一次貼上書單</h3>${closeBtn}</div>
    <p class="small muted" style="margin:0">一行一本。可以寫「書名 / 作者」。從讀墨、Kobo、Kindle 的書櫃頁面把書名複製過來貼上就好；重複的會自動跳過。</p>
    <label class="field"><span>書單</span><textarea class="bulk" name="list" placeholder="原子習慣 / 詹姆斯・克利爾&#10;被討厭的勇氣&#10;葬送的芙莉蓮 1"></textarea></label>
-   <div class="field"><span>這批是什麼格式</span><div class="seg">${Object.entries(FORMATS).map(([k,l],i)=>`<label><input type="radio" name="fmt1" value="${k}" ${k==='readmoo'?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
+   <div class="field"><span>這批是什麼格式</span><div class="seg">${usedFormats().map(([k,l],i,arr)=>`<label><input type="radio" name="fmt1" value="${k}" ${k===(arr.find(([x])=>x!=='paper')||arr[0])[0]?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
    <div class="field"><span>狀態</span>${statusSeg('unread')}</div>
    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" name="guess" checked> 書名結尾有數字就當成系列的第幾集（例如「葬送的芙莉蓮 3」）</label>
    <div class="sheet-foot"><span></span><button class="btn">加入</button></div>`);
@@ -792,28 +828,92 @@ function migrate(){
   db.migrated=true;save();toast(added?`搬了 ${added} 本書過來，格式先設成紙本，可以再改`:'沒有新的書要搬');go('shelf');
 }
 
-/* ---------- demo ---------- */
-function loadDemo(){
-  if(db.books.length&&!confirm('範例書會加在你現有的書旁邊，之後可以一本本刪掉。繼續？'))return;
-  const y=new Date().getFullYear(),d=(yy,m,dd)=>`${yy}-${pad(m)}-${pad(dd)}`;let t=Date.now()-1e6;
-  const mk=(o)=>{const r={id:uid(),author:'',series:'',vol:0,formats:['paper'],status:'unread',bought:d(y,1,10),finished:'',location:'',isbn:'',cover:'',note:'',hint:'',loan:null,added:t+=1000,genreAuto:true,...o};r.genre=classify(r);return r};
-  const hp=['神秘的魔法石','消失的密室','阿茲卡班的逃犯','火盃的考驗','鳳凰會的密令','混血王子的背叛','死神的聖物'];
-  db.books.push(
-    ...hp.map((s,i)=>mk({title:`哈利波特(${i+1})：${s}`,author:'J.K.羅琳',series:'哈利波特',vol:i+1,status:i<3?'done':i===3?'reading':'unread',finished:i<3?d(y,2+i,12):'',started:i===3?d(y,10,20):'',bought:d(y-1,12,1),location:'臥室書櫃'})),
-    ...[1,2,3,4,5,7].map(v=>mk({title:`葬送的芙莉蓮 ${v}`,author:'山田鐘人',series:'葬送的芙莉蓮',vol:v,status:v<=2?'done':'unread',finished:v<=2?d(y,5,v):'',bought:d(y,4,20),location:'客廳書櫃第二層'})),
-    mk({title:'原子習慣',author:'詹姆斯・克利爾',formats:['readmoo'],status:'done',finished:d(y,3,8),bought:d(y-1,6,1)}),
-    mk({title:'被討厭的勇氣',author:'岸見一郎、古賀史健',formats:['paper','kobo'],status:'unread',bought:d(y-2,8,3),location:'客廳書櫃第一層',note:'不小心買了兩個版本'}),
-    mk({title:'解憂雜貨店',author:'東野圭吾',formats:['paper'],status:'unread',bought:d(y-1,2,14),location:'客廳書櫃第一層',loan:{to:'小美',date:d(y,9,30)}}),
-    mk({title:'人類大歷史',author:'哈拉瑞',formats:['kindle'],status:'dropped',bought:d(y-1,11,11)}),
-    mk({title:'挪威的森林',author:'村上春樹',formats:['readmoo'],status:'unread',bought:d(y,6,18)}),
-    mk({title:'小王子',author:'安東尼・聖修伯里',formats:['paper'],status:'done',finished:d(y,1,30),bought:d(y-3,5,5),location:'床頭'}),
-  );
-  save();toast('已載入範例');go('shelf');
+/* ---------- welcome: first-run setup + how-to ---------- */
+const LOC_SUGGEST=['客廳書櫃','臥室書櫃','書桌','床頭','收納箱','公司'];
+const GOALS=[[6,'兩個月一本'],[12,'一個月一本'],[24,'兩週一本'],[52,'一週一本']];
+function startWelcome(first){
+  ui.wz={step:0,first:!!first,formats:new Set(db.formatsUsed||Object.keys(FORMATS)),locs:[...(db.locations||[])],goal:+db.goal||12};
+  if(first)ui.wz.formats=new Set(['paper']);
+  ui.tab='welcome';render();window.scrollTo(0,0);
 }
+function hasOld(){try{const o=JSON.parse(localStorage.getItem(OLD_KEY)||'null');return o?.books?.length||0}catch(e){return 0}}
+function viewWelcome(){
+  const w=ui.wz,N=5,dots=`<div class="wz-dots" aria-label="第 ${w.step+1} 步，共 ${N} 步">${Array.from({length:N},(_,i)=>`<i class="${i===w.step?'on':''}"></i>`).join('')}</div>`;
+  const foot=(next='下一步')=>`<div class="wz-foot">${w.step?'<button class="btn ghost" data-wz="back">上一步</button>':(w.first?'<button class="btn danger" data-wz="finish">略過</button>':'<button class="btn danger" data-wz="cancel">關閉</button>')}<button class="btn" data-wz="${w.step===N-1?'finish':'next'}">${next}</button></div>`;
+  let body='';
+  if(w.step===0){
+    body=`<h1>歡迎來到你的書房</h1><p class="lead">把家裡的紙本書和讀墨、Kobo、Kindle 的電子書收在同一個地方。先花一分鐘做幾個設定。</p>
+    <div class="card">${[
+      ['🔍','不再重複買','在書店掃一下條碼，馬上知道自己是不是已經有這本。'],
+      ['📚','套書、漫畫放一起','哈利波特、漫畫會收成一組，看得出缺哪一集、讀到哪一集。'],
+      ['🎯','督促自己讀','算出你還有幾本沒讀，每天幫你挑一本，記錄今年讀了幾本。'],
+      ['🤝','借書也記得','借給朋友家人的書，記下借給誰、借了多久。']].map(([i,t,p])=>`<div class="feat"><span class="ic" aria-hidden="true">${i}</span><div><b>${t}</b><p>${p}</p></div></div>`).join('')}</div>`;
+    return`<div class="wz">${dots}<div class="body">${body}</div>${foot('開始設定')}</div>`;
+  }
+  if(w.step===1){
+    body=`<h1>你的書在哪裡？</h1><p class="lead">勾選你有在用的。之後新增書時只會出現這些選項，隨時可以在「設定」改。</p>
+    ${[['paper','紙本書','家裡書櫃上的書'],['readmoo','讀墨 Readmoo','電子書'],['kobo','Kobo','電子書'],['kindle','Kindle','電子書'],['ebook','其他電子書','Google Play 圖書、博客來電子書、PDF…']].map(([k,t,s])=>
+      `<label class="opt"><input type="checkbox" data-wzfmt="${k}" ${w.formats.has(k)||k==='paper'?'checked':''} ${k==='paper'?'disabled':''}><span><b>${t}</b><span class="small muted">${s}</span></span></label>`).join('')}`;
+  }
+  if(w.step===2){
+    const sug=LOC_SUGGEST.filter(s=>!w.locs.includes(s));
+    body=`<h1>紙本書放在哪裡？</h1><p class="lead">寫下家裡放書的地方，新增書時可以直接選，要找書時就知道去哪找。可以先跳過。</p>
+    <div class="card"><div class="search-row"><input id="wzLoc" placeholder="例如：客廳書櫃第二層" enterkeyhint="done" style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 10px;font-size:16px"><button class="btn" data-wzloc>加入</button></div>
+      <div class="tagbox">${w.locs.map((l,i)=>`<button class="tag" data-wzlocdel="${i}" aria-label="移除 ${esc(l)}">${esc(l)}<b>✕</b></button>`).join('')||'<span class="small muted">還沒有位置</span>'}</div>
+      ${sug.length?`<div class="small muted" style="margin-top:14px">常見的：</div><div class="tagbox">${sug.map(s=>`<button class="tag sug" data-wzsug="${esc(s)}">＋ ${esc(s)}</button>`).join('')}</div>`:''}</div>`;
+  }
+  if(w.step===3){
+    const unread=db.books.filter(b=>b.status==='unread').length;
+    body=`<h1>今年想讀完幾本？</h1><p class="lead">設個目標，「讀書計畫」頁會告訴你進度有沒有落後。</p>
+    <div class="goalpick">${GOALS.map(([n,l])=>`<button data-wzgoal="${n}" aria-pressed="${w.goal===n}">${n}<small>${l}</small></button>`).join('')}</div>
+    <label class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span>自己設定</span><span><input type="number" id="wzGoal" min="1" max="999" inputmode="numeric" value="${w.goal}" style="width:80px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;text-align:right;font-size:16px"> 本</span></label>
+    ${unread?`<p class="small muted">你現在有 ${unread} 本還沒讀。</p>`:''}`;
+  }
+  if(w.step===4){
+    const ebooks=[...w.formats].filter(f=>f!=='paper').map(f=>FORMATS[f]);
+    const how=(icon,title,steps,act,label)=>`<div class="how"><h3><span aria-hidden="true">${icon}</span>${title}</h3><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol>${act?`<button class="btn sm" data-wzdo="${act}">${label}</button>`:''}</div>`;
+    body=`<h1>開始把書加進來</h1><p class="lead">設定好了！這幾種方法挑順手的用。這一頁之後可以在「設定 → 使用教學」再打開。</p>
+    ${how('📷','紙本書：掃條碼',['按書房右上角的 ＋','按搜尋框旁的條碼按鈕，第一次會問相機權限，請按允許','對準書背 <b>978</b> 開頭的條碼，書名、作者、封面會自動帶入','選格式、狀態、放在哪，按儲存'],'scan','現在掃第一本')}
+    ${how('📚','漫畫、套書：一次加一整套',['按 ＋ 後選「一整套」','填系列名稱和集數，例如鬼滅之刃第 1 到 23 集','填已經讀到第幾集，前面的會自動標成讀完','之後買新的一集，在書房的系列卡片按「＋」就好'],'set','加一整套')}
+    ${ebooks.length?how('📱',`電子書（${ebooks.join('、')}）：貼上清單`,['用瀏覽器打開電子書網站的書櫃頁面，選取書名複製','回到這裡，按 ＋ 後選「貼上清單」','一行一本，可以寫「書名 / 作者」；不是書名的行先刪掉','選這批是哪個平台，按加入（重複的會自動跳過）'],'bulk','貼上清單'):''}
+    ${how('🔍','在書店：我有這本嗎？',['打開書房，在最上面的搜尋框打書名，或按條碼按鈕掃一下','<span style="color:var(--warn)">橘色</span>：你已經有了','<span style="color:var(--accent)">綠色</span>：書房裡沒有，可以放心買'])}
+    ${hasOld()&&!db.migrated?how('📦','搬舊資料',[`舊的「旋律日記」書櫃裡有 ${hasOld()} 本書，可以一鍵搬過來`],'migrate','搬過來'):''}
+    ${how('💾','記得備份',['資料只存在這支手機的瀏覽器，不會上傳','換手機或清除 Safari 資料前，到「設定 → 匯出備份」'])}`;
+    return`<div class="wz">${dots}<div class="body">${body}</div>${foot('開始使用')}</div>`;
+  }
+  return`<div class="wz">${dots}<div class="body">${body}</div>${foot()}</div>`;
+}
+function wzAddLoc(v){v=String(v||'').trim();if(!v)return;if(!ui.wz.locs.includes(v))ui.wz.locs.push(v);render();$('#wzLoc')?.focus()}
+function finishWelcome(then){
+  const w=ui.wz;w.formats.add('paper');
+  db.formatsUsed=Object.keys(FORMATS).filter(k=>w.formats.has(k));db.locations=w.locs;db.goal=Math.max(1,+w.goal||12);db.setup=true;save();
+  ui.wz=null;ui.tab='shelf';location.hash='shelf';render();window.scrollTo(0,0);
+  if(then==='scan'){editBook(null);setTimeout(()=>startScan('sheet'),50)}
+  else if(then==='set')openSet();
+  else if(then==='bulk')openBulk();
+  else if(then==='migrate')migrate();
+  else toast('設定完成！');
+}
+app.addEventListener('click',e=>{
+  if(ui.tab!=='welcome')return;
+  const t=e.target.closest('button');if(!t)return;const d=t.dataset,w=ui.wz;
+  if(d.wz==='next'){w.step++;render();window.scrollTo(0,0)}
+  else if(d.wz==='back'){w.step--;render();window.scrollTo(0,0)}
+  else if(d.wz==='finish')finishWelcome();
+  else if(d.wz==='cancel'){ui.wz=null;go('settings')}
+  else if(d.wzgoal){w.goal=+d.wzgoal;render()}
+  else if('wzloc'in d)wzAddLoc($('#wzLoc').value);
+  else if(d.wzsug)wzAddLoc(d.wzsug);
+  else if(d.wzlocdel!==undefined){w.locs.splice(+d.wzlocdel,1);render()}
+  else if(d.wzdo)finishWelcome(d.wzdo);
+});
+app.addEventListener('change',e=>{if(ui.tab==='welcome'&&e.target.dataset.wzfmt){const k=e.target.dataset.wzfmt;e.target.checked?ui.wz.formats.add(k):ui.wz.formats.delete(k)}});
+app.addEventListener('input',e=>{if(ui.tab==='welcome'&&e.target.id==='wzGoal'){ui.wz.goal=Math.max(1,+e.target.value||1);$$('[data-wzgoal]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.wzgoal===ui.wz.goal))}});
+app.addEventListener('keydown',e=>{if(ui.tab==='welcome'&&e.target.id==='wzLoc'&&e.key==='Enter'){e.preventDefault();wzAddLoc(e.target.value)}});
 
 function toast(msg){$('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),2600)}
 
-render();
+if(!db.setup)startWelcome(true);else render();
 </script>
 </body>
 </html>
