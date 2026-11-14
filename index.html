@@ -242,7 +242,24 @@ h2.sec small{margin-right:auto}
 .cvrow{display:flex;gap:14px;align-items:center;margin:10px 0 4px}
 .emptycv{display:flex;justify-content:center;margin:10px 0 4px}
 .empty .btn{margin-top:0}
+.notfound{display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:var(--bg);border-radius:12px;padding:10px 12px}
 
+/* cover camera */
+.scan.shoot video{aspect-ratio:3/4}
+.scan.shoot .frame{left:50%;right:auto;top:47%;height:auto;width:64%;aspect-ratio:2/3;transform:translate(-50%,-50%);border-radius:6px 10px 10px 6px;box-shadow:0 0 0 999px rgba(0,0,0,.5)}
+.shoot-tip{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.scan.shoot .bottom{justify-content:space-between;padding:14px 18px 18px}
+.scan.shoot .bottom .ghost{background:none;color:#fff;font-weight:500;min-width:64px}
+.scan.shoot .bottom .shutter{width:66px;height:66px;border-radius:50%;padding:0;background:#fff;box-shadow:0 0 0 4px #000,0 0 0 7px #fff}
+.ocr{background:var(--bg);border-radius:12px;padding:10px 12px;margin:6px 0}
+.ocr-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ocr .tagbox{margin-top:8px}
+.ocr-status{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);padding:6px 0}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mini-seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:2px}
+.mini-seg button{border:0;background:none;border-radius:7px;padding:3px 10px;font-size:13px;color:var(--muted)}
+.mini-seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
 /* scanner */
 dialog.scan{border:0;padding:0;background:#000;color:#fff;width:100%;max-width:520px;border-radius:20px;overflow:hidden}
 .scan video{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#111}
@@ -299,6 +316,11 @@ textarea.bulk{min-height:180px;font-size:15px}
 <dialog class="scan" id="scan" aria-label="掃描條碼">
   <div style="position:relative"><video id="video" playsinline muted></video><div class="frame"></div></div>
   <div class="bottom"><span id="scanMsg">對準書背 978 開頭的條碼</span><button type="button" id="scanClose">取消</button></div>
+</dialog>
+
+<dialog class="scan shoot" id="shoot" aria-label="拍封面">
+  <div style="position:relative"><video id="shootVideo" playsinline muted></video><div class="frame" id="shootFrame"></div><div class="shoot-tip">把書的封面對準框框</div></div>
+  <div class="bottom"><button type="button" id="shootCancel" class="ghost">取消</button><button type="button" id="shootBtn" class="shutter" aria-label="拍照"></button><button type="button" id="shootLib" class="ghost">選照片</button></div>
 </dialog>
 
 <script>
@@ -420,7 +442,7 @@ function shrink(file,max=720,q=.8){
 }
 // One hidden <input capture> opens the rear camera straight away on phones
 const camIn=document.createElement('input');camIn.type='file';camIn.accept='image/*';camIn.setAttribute('capture','environment');camIn.hidden=true;document.body.append(camIn);
-function pickPhoto(cb){camIn.value='';camIn.onchange=async()=>{const f=camIn.files[0];if(!f)return;try{cb(await shrink(f))}catch(e){toast('讀不到這張照片')}};camIn.click()}
+function pickPhoto(cb,capture=true){capture?camIn.setAttribute('capture','environment'):camIn.removeAttribute('capture');camIn.value='';camIn.onchange=async()=>{const f=camIn.files[0];if(!f)return;try{cb(await shrink(f))}catch(e){toast('讀不到這張照片')}};camIn.click()}
 
 /* ---------- UI state + routing (#shelf, #plan, #settings, #book/<id>, #series/<key>) ---------- */
 const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',view:db.view||'grid',online:null,bookId:null,series:null,scroll:0,inApp:false};
@@ -709,8 +731,8 @@ app.addEventListener('click',e=>{
   if(d.genre!==undefined){ui.genre=ui.genre===d.genre?'':d.genre;render();if(ui.genre)$('#shelfSec')?.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(d.tabGo)return go(d.tabGo);
   if(d.setst){const b=getBook(ui.bookId);if(!b)return;b.status=d.setst;if(b.status==='reading'&&!b.started)b.started=today();if(b.status==='done'&&!b.finished){b.finished=today();toast(`讀完《${b.title}》🎉`)}save();return render()}
-  if(d.photo==='new')return pickPhoto(data=>{editBook(null,{_photo:data});toast('封面拍好了！接著用「掃描文字」或打字輸入書名');setTimeout(()=>form.elements.q?.focus(),80)});
-  if(d.photo){const b=getBook(d.photo);return pickPhoto(async data=>{const k=b.photo||'c_'+uid();await putCover(k,data);b.photo=k;save();render();toast('封面換好了')})}
+  if(d.photo==='new')return shootCover(data=>{editBook(null,{_photo:data});readCover(data)});
+  if(d.photo){const b=getBook(d.photo);return shootCover(async data=>{const k=b.photo||'c_'+uid();await putCover(k,data);b.photo=k;save();render();toast('封面換好了')})}
   if(d.unphoto){const b=getBook(d.unphoto);delCover(b.photo);b.photo='';save();return render()}
   if(d.f){ui[d.f]=ui[d.f]===d.v&&d.v?'':d.v;return render()}
   if('add'in d)return editBook(null);
@@ -794,7 +816,8 @@ function editBook(id,preset={}){
   openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯':'加一本書'}</h3>${closeBtn}</div>
    ${id?'':`<div class="mode"><button type="button" aria-pressed="true">一本</button><button type="button" data-set aria-pressed="false">一整套</button><button type="button" data-bulk aria-pressed="false">貼上清單</button></div>
    <div class="field"><span>搜尋書名或 ISBN，自動帶入作者、封面</span><div class="search-row"><input name="q" placeholder="例如：被討厭的勇氣" enterkeyhint="search" value="${esc(preset.isbn||'')}"><button type="button" class="icon-btn solid" data-scan="sheet" aria-label="掃描條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="hint">📱 iPhone 小技巧：點一下輸入框，選「掃描文字」，對準封面上的書名就能直接輸入。</div><div class="results"></div></div>`}
-   <div class="cvrow"><span id="cvPrev"></span><div><div class="small muted">封面</div><div class="btns" style="margin-top:6px"><button type="button" class="btn sm ghost" data-sphoto>${ICON.cam}拍封面</button><button type="button" class="btn sm danger" data-sunphoto hidden>移除照片</button></div><div class="hint" style="margin-top:6px">沒有也沒關係，會自動做一個封面。</div></div></div>
+   <div class="cvrow"><span id="cvPrev"></span><div><div class="small muted">封面</div><div class="btns" style="margin-top:6px"><button type="button" class="btn sm ghost" data-sphoto>${ICON.cam}拍封面</button><button type="button" class="btn sm danger" data-sunphoto hidden>移除照片</button></div><div class="hint" style="margin-top:6px">對準框框拍，會自動裁成封面，也會試著讀出書名。</div></div></div>
+   <div class="ocrbox"></div>
    <label class="field"><span>書名</span><input name="title" value="${esc(b.title)}" required></label>
    <div class="dup" id="dup"></div>
    <label class="field"><span>作者</span><input name="author" value="${esc(b.author)}"></label>
@@ -845,7 +868,13 @@ form.addEventListener('click',e=>{
   if(d.pick!==undefined)return pickResult(+d.pick);
   if('set'in d)return openSet();
   if('bulk'in d)return openBulk();
-  if('sphoto'in d)return pickPhoto(data=>{form._photo=data;updatePreview()});
+  if('sphoto'in d)return shootCover(data=>{form._photo=data;updatePreview();if(!form.elements.title.value)readCover(data)});
+  if('ocrshoot'in d)return shootCover(data=>{form._photo=data;updatePreview();readCover(data)});
+  if(d.ocrtarget){form._ocrTarget=d.ocrtarget;return drawOcr()}
+  if(d.ocrline!==undefined){const l=form._ocrLines?.[+d.ocrline];if(!l)return;const f=form.elements,tg=form._ocrTarget||'title';
+    f[tg].value=tg==='author'?l.text.replace(AUTHOR_RE,'').trim():l.text;
+    if(tg==='title'){form._ocrTarget='author';if(f.q){f.q.value=l.text;searchBooks()}}
+    drawOcr();showDup();updateGenreHint();updatePreview();return}
   if('sunphoto'in d){form._photo=null;form._clear=true;return updatePreview()}
   if('returned'in d){form.elements.loanTo.value='';form.elements.loanDate.value='';t.remove();return}
   if('delete'in d){const b=getBook(form.dataset.id);if(b&&confirm(`刪除《${b.title}》？`)){db.books=db.books.filter(x=>x.id!==b.id);delCover(b.photo);save();sheet.close();toast('已刪除');if(ui.tab==='book')back();else render()}}
@@ -858,7 +887,7 @@ async function searchBooks(){
   if(looksIsbn(q)&&!form.elements.isbn.value)form.elements.isbn.value=isbn13(q);
   const e=encodeURIComponent(q);
   box.innerHTML=(r.length?r.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${safeUrl(v.cover)?`<img src="${esc(safeUrl(v.cover))}" alt="">`:'<span class="noimg"></span>'}<span><b>${esc(v.title)}</b><br><span class="muted small">${esc(v.author)}</span></span></button>`).join('')
-    :`<span class="muted small">${r.failed?'連不上書籍資料庫（檢查一下網路）。':'線上找不到這本，'}直接手動填也可以。</span>`)
+    :`<div class="notfound"><span class="muted small">${r.failed?'連不上書籍資料庫（檢查一下網路）。':'線上找不到這本。'}拍封面，讓手機讀出書名和作者：</span><button type="button" class="btn sm" data-ocrshoot>${ICON.cam}拍封面認書名</button></div>`)
     +`<div class="small muted">到別處找：${[['博客來',`https://search.books.com.tw/search/query/key/${e}/cat/all`],['讀墨',`https://readmoo.com/search/keyword?q=${e}`],['Kobo',`https://www.kobo.com/tw/zh/search?query=${e}`],['Google',`https://www.google.com/search?tbm=bks&q=${e}`]].map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent);margin-left:8px">${l}</a>`).join('')}</div>`;
   showDup();updateGenreHint();
 }
@@ -993,6 +1022,88 @@ function onScanned(ctx,code){
   ui.q=code;ui.online=null;render();lookupIsbnForHome(code);
 }
 
+/* ---------- cover camera: line the book up with the frame, we crop to it ---------- */
+const shootDlg=$('#shoot'),shootVideo=$('#shootVideo');let shootState=null;
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+// Photos picked from the library: keep the middle 2:3 part, which is where the book usually is.
+async function cropCenter(dataUrl){
+  const img=await loadImg(dataUrl);let w=img.width,h=img.height;
+  if(w/h>2/3)w=h*2/3;else h=w*1.5;
+  const k=Math.min(1,960/h),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+  c.getContext('2d').drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',.82);
+}
+function shootCover(cb){
+  const fallback=()=>pickPhoto(async d=>cb(await cropCenter(d)));
+  if(!navigator.mediaDevices?.getUserMedia)return fallback();
+  shootState={cb,stream:null,fallback};shootDlg.showModal();
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}},audio:false})
+    .then(async st=>{if(!shootState){st.getTracks().forEach(t=>t.stop());return}shootState.stream=st;shootVideo.srcObject=st;await shootVideo.play()})
+    .catch(e=>{closeShoot();if(e&&e.name==='NotAllowedError')toast('沒有相機權限，改用選照片');fallback()});
+}
+function closeShoot(){
+  if(!shootState)return;shootState.stream?.getTracks().forEach(t=>t.stop());shootVideo.srcObject=null;shootState=null;if(shootDlg.open)shootDlg.close();
+}
+$('#shootBtn').addEventListener('click',()=>{
+  const v=shootVideo;if(!shootState||!v.videoWidth)return;
+  const vr=v.getBoundingClientRect(),r=$('#shootFrame').getBoundingClientRect();
+  // map the on-screen frame back to video pixels (the video is shown with object-fit:cover)
+  const scale=Math.max(vr.width/v.videoWidth,vr.height/v.videoHeight);
+  const offX=(vr.width-v.videoWidth*scale)/2,offY=(vr.height-v.videoHeight*scale)/2;
+  const sx=Math.max(0,(r.left-vr.left-offX)/scale),sy=Math.max(0,(r.top-vr.top-offY)/scale),sw=Math.min(v.videoWidth-sx,r.width/scale),sh=Math.min(v.videoHeight-sy,r.height/scale);
+  const k=Math.min(1,960/sh),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  c.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,c.width,c.height);
+  const cb=shootState.cb;closeShoot();cb(c.toDataURL('image/jpeg',.82));
+});
+$('#shootCancel').addEventListener('click',closeShoot);
+$('#shootLib').addEventListener('click',()=>{const s=shootState;closeShoot();if(s)pickPhoto(async d=>s.cb(await cropCenter(d)),false)});
+shootDlg.addEventListener('cancel',closeShoot);
+
+/* ---------- reading the title off the cover (on-device OCR, nothing is uploaded) ---------- */
+let ocrWorker=null;
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s)})}
+const cleanLine=t=>String(t||'').trim()
+  // "被 討厭 的" → "被討厭的", but keep the space between two English words
+  .replace(/\s+/g,(m,o,str)=>/[\x21-\x7e]/.test(str[o-1]||'')&&/[\x21-\x7e]/.test(str[o+m.length]||'')?' ':'')
+  .replace(/^[\s\p{P}\p{S}]+|[\s\p{P}\p{S}]+$/gu,'');
+const AUTHOR_RE=/(著|作者|譯者?|編著|繪|文\/圖|文．圖|原作|原著|written by|by)\s*[:：]?/i;
+async function ocrCover(dataUrl,status){
+  if(!window.Tesseract){status('第一次使用要下載文字辨識資料（約 8MB），請稍等…');await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js')}
+  if(!ocrWorker)ocrWorker=Tesseract.createWorker(['chi_tra','eng'],1,{logger:m=>{if(m.status==='recognizing text')status(`讀取封面上的字… ${Math.round(m.progress*100)}%`)}}).catch(e=>{ocrWorker=null;throw e});
+  const w=await ocrWorker;status('讀取封面上的字…');
+  const {data}=await w.recognize(dataUrl);
+  const lines=(data.lines||[]).map(l=>({text:cleanLine(l.text),h:l.bbox.y1-l.bbox.y0,conf:l.confidence}))
+    .filter(l=>l.conf>=35&&(l.text.match(/[\p{L}\p{N}]/gu)||[]).length>=2);
+  const seen=new Set();return lines.filter(l=>!seen.has(l.text)&&seen.add(l.text));
+}
+// Biggest confident line is usually the title; a line with 著／作者 is the author.
+function guessFromLines(lines){
+  const a=lines.find(l=>AUTHOR_RE.test(l.text)&&!/譯/.test(l.text));
+  const t=[...lines].filter(l=>l!==a&&l.conf>=50).sort((x,y)=>y.h-x.h)[0]||lines.find(l=>l!==a);
+  return{title:t?.text||'',author:a?a.text.replace(AUTHOR_RE,'').replace(/[\s:：]+$/,'').trim():''};
+}
+async function readCover(dataUrl){
+  const box=$('.ocrbox',form);if(!box)return;const myForm=form.dataset.id+'|'+Date.now();form._ocr=myForm;
+  const status=t=>{if(form._ocr===myForm)box.innerHTML=`<div class="ocr-status"><span class="spin"></span>${esc(t)}</div>`};
+  status('準備辨識封面…');
+  let lines;
+  try{lines=await ocrCover(dataUrl,status)}catch(e){if(form._ocr===myForm)box.innerHTML='<div class="hint">沒辦法辨識（可能是網路問題）。可以用「掃描文字」或直接打字。</div>';return}
+  if(form._ocr!==myForm||!sheet.open)return;
+  if(!lines.length){box.innerHTML='<div class="hint">封面上讀不到字。可以換個角度再拍一次，或用「掃描文字」。</div>';return}
+  const f=form.elements,g=guessFromLines(lines);
+  if(g.title&&!f.title.value)f.title.value=g.title;
+  if(g.author&&!f.author.value)f.author.value=g.author;
+  form._ocrLines=lines;form._ocrTarget=f.title.value?'author':'title';
+  drawOcr();showDup();updateGenreHint();updatePreview();
+  if(g.title&&f.q){f.q.value=g.title;searchBooks()}
+}
+function drawOcr(){
+  const box=$('.ocrbox',form);if(!box||!form._ocrLines)return;const tg=form._ocrTarget;
+  box.innerHTML=`<div class="ocr"><div class="ocr-head"><span class="small muted">從封面讀到的字，點一下填入</span><div class="mini-seg"><button type="button" data-ocrtarget="title" aria-pressed="${tg==='title'}">書名</button><button type="button" data-ocrtarget="author" aria-pressed="${tg==='author'}">作者</button></div></div>
+    <div class="tagbox">${form._ocrLines.map((l,i)=>`<button type="button" class="tag sug" data-ocrline="${i}">${esc(l.text)}</button>`).join('')}</div>
+    <div class="hint" style="margin-top:6px">辨識不一定準，有錯字可以直接改。</div></div>`;
+}
+
 /* ---------- import / export / migrate ---------- */
 function download(name,text,type){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.append(a);a.click();
@@ -1070,7 +1181,7 @@ function viewWelcome(){
     const how=(icon,title,steps,act,label)=>`<div class="how"><h3><span aria-hidden="true">${icon}</span>${title}</h3><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol>${act?`<button class="btn sm" data-wzdo="${act}">${label}</button>`:''}</div>`;
     body=`<h1>開始把書加進來</h1><p class="lead">設定好了！這幾種方法挑順手的用。這一頁之後可以在「設定 → 使用教學」再打開。</p>
     ${how('📷','紙本書：掃條碼',['按書房右上角的 ＋','按搜尋框旁的條碼按鈕，第一次會問相機權限，請按允許','對準書背 <b>978</b> 開頭的條碼，書名、作者、封面會自動帶入','選格式、狀態、放在哪，按儲存'],'scan','現在掃第一本')}
-    ${how('📸','拍封面',['按書房搜尋框旁的相機，直接拍書的封面','照片會變成這本書的封面','iPhone 可以點書名欄位，選「掃描文字」，對準封面上的書名，不用自己打字'],'')}
+    ${how('📸','拍封面',['查不到的書，按搜尋框旁的相機','把封面對準框框拍，會自動裁成這本書的封面','手機會試著讀出書名和作者，讀錯的話點一下其他文字或直接改','也可以用 iPhone 的「掃描文字」：點書名欄位，對準封面上的書名'],'')}
     ${how('📚','漫畫、套書：一次加一整套',['按 ＋ 後選「一整套」','填系列名稱和集數，例如鬼滅之刃第 1 到 23 集','填已經讀到第幾集，前面的會自動標成讀完','之後買新的一集，在書房的系列卡片按「＋」就好'],'set','加一整套')}
     ${ebooks.length?how('📱',`電子書（${ebooks.join('、')}）：貼上清單`,['用瀏覽器打開電子書網站的書櫃頁面，選取書名複製','回到這裡，按 ＋ 後選「貼上清單」','一行一本，可以寫「書名 / 作者」；不是書名的行先刪掉','選這批是哪個平台，按加入（重複的會自動跳過）'],'bulk','貼上清單'):''}
     ${how('🔍','在書店：我有這本嗎？',['打開書房，在最上面的搜尋框打書名，或按條碼按鈕掃一下','<span style="color:var(--warn)">橘色</span>：你已經有了','<span style="color:var(--accent)">綠色</span>：書房裡沒有，可以放心買'])}
