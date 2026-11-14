@@ -690,6 +690,18 @@ function viewSettings(){
     <div class="line-item"><span>一次貼上書單<br><span class="small muted">讀墨、Kobo、Kindle 的書名清單</span></span><button class="btn sm ghost" data-bulk>貼上</button></div>
     <div class="line-item"><span>一次加一整套<br><span class="small muted">漫畫、系列小說</span></span><button class="btn sm ghost" data-set>新增</button></div>
   </div>
+  <h2 class="sec">AI 辨識 <small>${aiKey()?'<span style="color:var(--accent)">● 已開啟</span>':'未開啟'}</small></h2>
+  <div class="card">
+    <p class="small" style="margin:0 0 8px">開啟後，拍封面或版權頁時由 AI（Claude）判斷哪些是書名、作者、出版社、ISBN、第幾集，中文、日文、英文都看得懂。沒開啟時用手機內建辨識，比較不準。</p>
+    <ol class="small muted" style="margin:0 0 10px;padding-left:20px">
+      <li>到 console.anthropic.com 註冊、綁定付款方式</li>
+      <li>在「API Keys」建立一把金鑰，複製起來</li>
+      <li>貼在下面，按「測試」</li>
+    </ol>
+    <input id="aiKeyIn" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(aiKey())}" style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;font-size:16px">
+    <div class="btns" style="margin-top:8px"><button class="btn sm" data-aitest>測試</button>${aiKey()?'<button class="btn sm danger" data-aiclear>移除金鑰</button>':''}</div>
+    <p class="hint" style="margin:8px 0 0">每拍一張大約台幣幾毛錢，由你的 Anthropic 帳號付費。照片會傳給 Anthropic 辨識；金鑰只存在這支手機的瀏覽器裡，不會放進網站，也不會出現在備份檔。</p>
+  </div>
   <h2 class="sec">備份</h2>
   <div class="card set">
     <div class="line-item"><span>匯出備份（JSON）</span><button class="btn sm ghost" data-export>匯出</button></div>
@@ -711,6 +723,7 @@ const app=$('#app');
 app.addEventListener('input',e=>{
   if(e.target.id==='q'){ui.q=e.target.value;ui.online=null;refreshShelf();return}
   if(e.target.id==='goal'){db.goal=Math.max(1,+e.target.value||12);save();return}
+  if(e.target.id==='aiKeyIn'){try{const v=e.target.value.trim();v?localStorage.setItem(AI_KEY,v):localStorage.removeItem(AI_KEY)}catch(err){}return}
   if(e.target.id==='gbKey'){try{localStorage.setItem(GB_KEY,e.target.value.trim())}catch(err){}}
 });
 app.addEventListener('keydown',e=>{if(e.target.id==='q'&&e.key==='Enter'){e.target.blur();if(looksIsbn(ui.q))lookupIsbnForHome(ui.q)}});
@@ -761,6 +774,8 @@ app.addEventListener('click',e=>{
   if('export'in d){const covers={};db.books.forEach(b=>{if(b.photo&&COV.has(b.photo))covers[b.photo]=COV.get(b.photo)});return download(`我的書房-${today()}.json`,JSON.stringify({app:'my-bookroom',version:2,...db,covers}),'application/json')}
   if('csv'in d)return exportCsv();
   if('guide'in d)return startWelcome();
+  if('aitest'in d)return aiTest().then(render);
+  if('aiclear'in d){try{localStorage.removeItem(AI_KEY)}catch(e){}toast('已移除金鑰');return render()}
   if('wipe'in d){if(confirm(`確定要刪除全部 ${db.books.length} 本書嗎？建議先匯出備份。`)){db.books=[];db.pick=null;save();toast('已清空');render()}}
 });
 
@@ -1081,10 +1096,12 @@ const cleanLine=t=>String(t||'').trim()
   .replace(/^[\s\p{P}\p{S}]+|[\s\p{P}\p{S}]+$/gu,'');
 const AUTHOR_RE=/(著|作者|譯者?|編著|繪|文\/圖|文．圖|原作|原著|written by|by)\s*[:：]?/i;
 async function ocrCover(dataUrl,status){
-  if(!window.Tesseract){status('第一次使用要下載文字辨識資料（約 8MB），請稍等…');await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js')}
-  if(!ocrWorker)ocrWorker=Tesseract.createWorker(['chi_tra','eng'],1,{logger:m=>{if(m.status==='recognizing text')status(`讀取封面上的字… ${Math.round(m.progress*100)}%`)}}).catch(e=>{ocrWorker=null;throw e});
-  const w=await ocrWorker;status('讀取封面上的字…');
-  const {data}=await w.recognize(dataUrl);
+  if(!window.Tesseract){status('第一次使用要下載文字辨識資料（約 10MB），請稍等…');await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js')}
+  if(!ocrWorker)ocrWorker=Tesseract.createWorker(['chi_tra','jpn','eng'],1,{logger:m=>{if(m.status==='recognizing text')status(`讀取封面上的字… ${Math.round(m.progress*100)}%`)}}).catch(e=>{ocrWorker=null;throw e});
+  // a language file that never arrives would otherwise leave the spinner up forever
+  const timeout=ms=>new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
+  const w=await Promise.race([ocrWorker,timeout(120000)]).catch(e=>{ocrWorker=null;throw e});status('讀取封面上的字…');
+  const {data}=await Promise.race([w.recognize(dataUrl),timeout(60000)]);
   const lines=(data.lines||[]).map(l=>({text:cleanLine(l.text),h:l.bbox.y1-l.bbox.y0,conf:l.confidence}))
     .filter(l=>l.conf>=35&&(l.text.match(/[\p{L}\p{N}]/gu)||[]).length>=2);
   const seen=new Set();return lines.filter(l=>!seen.has(l.text)&&seen.add(l.text));
@@ -1096,6 +1113,7 @@ function guessFromLines(lines){
   return{title:t?.text||'',author:a?a.text.replace(AUTHOR_RE,'').replace(/[\s:：]+$/,'').trim():''};
 }
 async function readCover(dataUrl){
+  if(aiKey()&&await aiFill(dataUrl,'cover'))return;
   const box=$('.ocrbox',form);if(!box)return;const myForm=form.dataset.id+'|'+Date.now();form._ocr=myForm;
   const status=t=>{if(form._ocr===myForm)box.innerHTML=`<div class="ocr-status"><span class="spin"></span>${esc(t)}</div>`};
   status('準備辨識封面…');
@@ -1131,6 +1149,7 @@ function parsePage(lines){
   return out;
 }
 async function readPage(dataUrl){
+  if(aiKey()&&await aiFill(dataUrl,'page'))return;
   const box=$('.ocrbox',form);if(!box)return;const my=form.dataset.id+'|p'+Date.now();form._ocr=my;
   const status=t=>{if(form._ocr===my)box.innerHTML=`<div class="ocr-status"><span class="spin"></span>${esc(t.replace('封面','版權頁'))}</div>`};
   status('準備讀取版權頁…');
@@ -1155,8 +1174,97 @@ function drawOcr(){
   const page=form._ocrKind==='page';
   box.innerHTML=`<div class="ocr">${page&&form._ocrSummary?`<div class="ocr-done">✓ ${esc(form._ocrSummary)}</div>`:''}<div class="ocr-head"><span class="small muted">從${page?'版權頁':'封面'}讀到的字，點一下填入</span><div class="mini-seg">${[['title','書名'],['author','作者'],['publisher','出版社']].map(([k,l])=>`<button type="button" data-ocrtarget="${k}" aria-pressed="${tg===k}">${l}</button>`).join('')}</div></div>
     <div class="tagbox ocr-lines">${form._ocrLines.map((l,i)=>`<button type="button" class="tag sug" data-ocrline="${i}">${esc(l.text)}</button>`).join('')}</div>
-    <div class="hint" style="margin-top:6px">辨識不一定準，有錯字可以直接改。</div>
+    <div class="hint" style="margin-top:6px">手機內建辨識不一定準，有錯字可以直接改。${aiKey()?'':'想要準確分辨書名、作者，可以到「設定」開啟 AI 辨識。'}</div>
     ${page?'':`<div class="ocr-more"><span class="small muted">封面讀不準？</span>${'<button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button>'}</div>`}</div>`;
+}
+
+/* ---------- AI recognition (optional): Claude reads the photo and says which text is what ---------- */
+// The API key is typed in 設定 and stays in this phone's browser; requests go straight from the phone to Anthropic.
+const AI_KEY='my-bookroom-anthropic-key';
+const aiKey=()=>{try{return localStorage.getItem(AI_KEY)||''}catch(e){return''}};
+let anthropicMod=null;
+async function aiClient(){
+  if(!anthropicMod)anthropicMod=import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm').catch(e=>{anthropicMod=null;throw e});
+  const m=await anthropicMod,Anthropic=m.default||m.Anthropic;
+  return{Anthropic,client:new Anthropic({apiKey:aiKey(),dangerouslyAllowBrowser:true,maxRetries:1,timeout:60000})};
+}
+const BOOK_SCHEMA={type:'object',additionalProperties:false,
+  required:['what','title','authors','translators','publisher','isbn','series','volume','genre'],
+  properties:{
+    what:{type:'string',enum:['cover','copyright_page','spine','back_cover','not_a_book']},
+    title:{type:'string'},authors:{type:'array',items:{type:'string'}},translators:{type:'array',items:{type:'string'}},
+    publisher:{type:'string'},isbn:{type:'string'},series:{type:'string'},volume:{type:'integer'},
+    genre:{type:'string',enum:[...GENRES.map(g=>g.k),OTHER.k]}}};
+const AI_SYSTEM=`You read photos of books for a personal library catalogue in Taiwan. The photo is a cover, spine, back cover or copyright page (版權頁/奥付). Books may be in Traditional Chinese, Simplified Chinese, Japanese, English or another language.
+Return the bibliographic data:
+- title: the main title exactly as printed, in its original language and script (do not translate, do not convert Simplified to Traditional). Include a subtitle after "：" only if it is clearly part of the title. Leave out series names, volume numbers, slogans, award text and blurbs.
+- authors / translators: names only, without role words such as 著、作者、譯、訳、文、圖、by. Keep the original script.
+- publisher: the publishing house.
+- isbn: digits only (13 digits preferred); empty if not visible. Never guess an ISBN.
+- series and volume: for manga or numbered series, the series name and the volume number; otherwise "" and 0.
+- genre: the best match from the list.
+Use "" (or 0, or []) for anything you cannot read. If the photo is not a book, set what to "not_a_book".`;
+function resizeDataUrl(d,max){
+  return loadImg(d).then(img=>{const k=Math.min(1,max/Math.max(img.width,img.height));if(k===1)return d;
+    const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85)});
+}
+async function aiReadBook(dataUrl){
+  const {Anthropic,client}=await aiClient();
+  const img=await resizeDataUrl(dataUrl,1568);
+  try{
+    const res=await client.beta.messages.create({
+      model:'claude-opus-5-5',max_tokens:4000,
+      betas:['server-side-fallback-2026-07-01'],fallbacks:'default',
+      output_config:{effort:'low',format:{type:'json_schema',schema:BOOK_SCHEMA}},
+      system:AI_SYSTEM,
+      messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.split(',')[1]}},{type:'text',text:'Read this book photo.'}]}],
+    });
+    if(res.stop_reason==='refusal')throw new Error('AI 拒絕了這張照片');
+    const txt=res.content.find(b=>b.type==='text')?.text;
+    if(!txt)throw new Error('AI 沒有回傳資料');
+    return JSON.parse(txt);
+  }catch(e){
+    if(e instanceof Anthropic.AuthenticationError)throw new Error('API 金鑰不對，請到「設定」檢查');
+    if(e instanceof Anthropic.PermissionDeniedError)throw new Error('這把 API 金鑰沒有權限，請到 Anthropic 後台檢查');
+    if(e instanceof Anthropic.RateLimitError)throw new Error('用得太快或額度用完了，等一下再試');
+    if(e instanceof Anthropic.APIConnectionError)throw new Error('連不上 AI（檢查一下網路）');
+    if(e instanceof Anthropic.APIError)throw new Error(`AI 出錯了（${e.status||'?'}）`);
+    throw e;
+  }
+}
+// Fill the open editor from the AI result. Returns false if it should fall back to on-device OCR.
+async function aiFill(dataUrl,kind){
+  const box=$('.ocrbox',form);if(!box)return true;const my=form.dataset.id+'|a'+Date.now();form._ocr=my;
+  box.innerHTML=`<div class="ocr-status"><span class="spin"></span>AI 正在讀${kind==='page'?'版權頁':'封面'}…</div>`;
+  let r;
+  try{r=await aiReadBook(dataUrl)}catch(e){
+    if(form._ocr!==my)return true;
+    toast(`${e.message||'AI 辨識失敗'}，先用手機內建辨識`);
+    box.innerHTML=`<div class="hint" style="color:var(--warn)">${esc(e.message||'AI 辨識失敗')}，改用手機內建辨識。</div>`;
+    return false;
+  }
+  if(form._ocr!==my||!sheet.open)return true;
+  if(r.what==='not_a_book'){box.innerHTML='<div class="hint">這張看起來不是書，再拍一次試試。</div>';return true}
+  const f=form.elements,set=(name,v)=>{if(v!==undefined&&v!==''&&v!==0&&f[name])f[name].value=v};
+  const isbn=isbn13(r.isbn)&&validIsbn13(isbn13(r.isbn))?isbn13(r.isbn):'';
+  set('title',r.title);set('author',(r.authors||[]).join('、'));set('publisher',r.publisher);set('isbn',isbn);
+  if(r.series){set('series',r.series);if(r.volume)set('vol',r.volume)}
+  if(r.genre&&f.genre&&!f.genre.value&&r.genre!==OTHER.k)f.genre.value=r.genre;
+  if(r.translators?.length&&!f.note.value.includes(r.translators[0]))f.note.value=(f.note.value?f.note.value+'\n':'')+'譯者：'+r.translators.join('、');
+  const got=[['書名',r.title],['作者',r.authors?.length],['出版社',r.publisher],['ISBN',isbn],['系列',r.series]].filter(x=>x[1]).map(x=>x[0]);
+  box.innerHTML=`<div class="ocr"><div class="ocr-done">✓ AI 讀到了${got.length?got.join('、'):'……沒有讀到資料'}</div><div class="hint">有錯可以直接改。${kind==='page'?'':'封面沒寫到的資料，可以再拍版權頁補上。'}</div>${kind==='page'?'':`<div class="ocr-more">${'<button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button>'}</div>`}</div>`;
+  showDup();updateGenreHint();updatePreview();
+  // no cover photo yet (only the copyright page was shot): look the ISBN up online to offer a cover
+  if(isbn&&!form._photo&&f.q){f.q.value=isbn;searchBooks()}
+  return true;
+}
+async function aiTest(){
+  if(!aiKey())return toast('先貼上 API 金鑰');
+  toast('測試中…');
+  try{const {client}=await aiClient();
+    const r=await client.beta.messages.create({model:'claude-opus-5-5',max_tokens:2000,betas:['server-side-fallback-2026-07-01'],fallbacks:'default',output_config:{effort:'low'},messages:[{role:'user',content:'Reply with the single word OK.'}]});
+    toast(r.content.some(b=>b.type==='text')?'AI 辨識可以用了 ✓':'有回應，但怪怪的');
+  }catch(e){toast(e?.status===401?'API 金鑰不對':e?.status===403?'這把金鑰沒有權限':'測試失敗：'+(e?.message||'').slice(0,60))}
 }
 
 /* ---------- import / export / migrate ---------- */
