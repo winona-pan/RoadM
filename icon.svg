@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8f3ea"/>
+      <stop offset="1" stop-color="#ece2d1"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity=".16"/>
+      <stop offset=".18" stop-color="#fff" stop-opacity=".18"/>
+      <stop offset=".4" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(256 262) scale(1.1) translate(-256 -256)">
+
+  <!-- soft shadow under the shelf -->
+  <ellipse cx="256" cy="404" rx="156" ry="12" fill="#5b4632" opacity=".12"/>
+
+  <!-- books -->
+  <g>
+    <rect x="118" y="178" width="52" height="196" rx="7" fill="#2f6b57"/>
+    <rect x="118" y="178" width="52" height="196" rx="7" fill="url(#shine)"/>
+    <rect x="130" y="206" width="28" height="5" rx="2.5" fill="#f3e6c8" opacity=".9"/>
+    <rect x="130" y="338" width="28" height="5" rx="2.5" fill="#f3e6c8" opacity=".9"/>
+
+    <rect x="176" y="208" width="44" height="166" rx="7" fill="#dca64a"/>
+    <rect x="176" y="208" width="44" height="166" rx="7" fill="url(#shine)"/>
+    <rect x="186" y="232" width="24" height="18" rx="4" fill="#fff8e8" opacity=".85"/>
+
+    <rect x="226" y="150" width="58" height="224" rx="7" fill="#c8643f"/>
+    <rect x="226" y="150" width="58" height="224" rx="7" fill="url(#shine)"/>
+    <circle cx="255" cy="214" r="12" fill="#fbe9d8" opacity=".9"/>
+    <rect x="240" y="320" width="30" height="5" rx="2.5" fill="#fbe9d8" opacity=".85"/>
+    <!-- bookmark ribbon -->
+    <path d="M266 150v58l9-8 9 8v-58z" fill="#f2cf73"/>
+
+    <rect x="290" y="192" width="42" height="182" rx="7" fill="#6f6a9e"/>
+    <rect x="290" y="192" width="42" height="182" rx="7" fill="url(#shine)"/>
+    <rect x="299" y="216" width="24" height="5" rx="2.5" fill="#ecebf8" opacity=".85"/>
+    <rect x="299" y="226" width="24" height="5" rx="2.5" fill="#ecebf8" opacity=".85"/>
+
+    <!-- leaning book -->
+    <g transform="rotate(17 396 374)">
+      <rect x="348" y="196" width="48" height="178" rx="7" fill="#4f84a1"/>
+      <rect x="348" y="196" width="48" height="178" rx="7" fill="url(#shine)"/>
+      <rect x="358" y="222" width="28" height="5" rx="2.5" fill="#e6f1f7" opacity=".85"/>
+    </g>
+  </g>
+
+  <!-- shelf -->
+  <rect x="92" y="372" width="328" height="22" rx="11" fill="#8b6447"/>
+  <rect x="92" y="372" width="328" height="8" rx="4" fill="#a57c5b"/>
+
+  <!-- tiny sparkle -->
+  <path d="M146 118l6 15 15 6-15 6-6 15-6-15-15-6 15-6z" fill="#dca64a"/>
+  <circle cx="186" cy="104" r="5" fill="#c8643f" opacity=".7"/>
+  </g>
+</svg>
