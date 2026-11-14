@@ -242,23 +242,27 @@ h2.sec small{margin-right:auto}
 .cvrow{display:flex;gap:14px;align-items:center;margin:10px 0 4px}
 .emptycv{display:flex;justify-content:center;margin:10px 0 4px}
 .empty .btn{margin-top:0}
+.ocr-done{color:var(--accent);font-weight:700;font-size:14px;margin-bottom:8px}
+.ocr-lines{max-height:220px;overflow:auto}
+.ocr-more{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .notfound{display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:var(--bg);border-radius:12px;padding:10px 12px}
 
 /* cover camera */
 .scan.shoot video{aspect-ratio:3/4}
+.scan.shoot.page .frame{width:88%;aspect-ratio:3/4;top:46%}
 .scan.shoot .frame{left:50%;right:auto;top:47%;height:auto;width:64%;aspect-ratio:2/3;transform:translate(-50%,-50%);border-radius:6px 10px 10px 6px;box-shadow:0 0 0 999px rgba(0,0,0,.5)}
 .shoot-tip{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .scan.shoot .bottom{justify-content:space-between;padding:14px 18px 18px}
 .scan.shoot .bottom .ghost{background:none;color:#fff;font-weight:500;min-width:64px}
 .scan.shoot .bottom .shutter{width:66px;height:66px;border-radius:50%;padding:0;background:#fff;box-shadow:0 0 0 4px #000,0 0 0 7px #fff}
 .ocr{background:var(--bg);border-radius:12px;padding:10px 12px;margin:6px 0}
-.ocr-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ocr-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .ocr .tagbox{margin-top:8px}
 .ocr-status{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);padding:6px 0}
 .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mini-seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:2px}
-.mini-seg button{border:0;background:none;border-radius:7px;padding:3px 10px;font-size:13px;color:var(--muted)}
+.mini-seg button{white-space:nowrap;border:0;background:none;border-radius:7px;padding:3px 10px;font-size:13px;color:var(--muted)}
 .mini-seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
 /* scanner */
 dialog.scan{border:0;padding:0;background:#000;color:#fff;width:100%;max-width:520px;border-radius:20px;overflow:hidden}
@@ -414,7 +418,7 @@ function matches(b,q){
   q=q.trim();if(!q)return true;
   if(looksIsbn(q))return isbn13(b.isbn)===isbn13(q);
   const nq=norm(q);if(!nq)return true;
-  const hay=norm([b.title,b.author,b.series,b.location,b.note,b.loan?.to].join('|'));
+  const hay=norm([b.title,b.author,b.series,b.publisher,b.location,b.note,b.loan?.to].join('|'));
   if(hay.includes(nq))return true;
   const nt=norm(b.title);return nt.length>=2&&nq.includes(nt);
 }
@@ -442,7 +446,7 @@ function shrink(file,max=720,q=.8){
 }
 // One hidden <input capture> opens the rear camera straight away on phones
 const camIn=document.createElement('input');camIn.type='file';camIn.accept='image/*';camIn.setAttribute('capture','environment');camIn.hidden=true;document.body.append(camIn);
-function pickPhoto(cb,capture=true){capture?camIn.setAttribute('capture','environment'):camIn.removeAttribute('capture');camIn.value='';camIn.onchange=async()=>{const f=camIn.files[0];if(!f)return;try{cb(await shrink(f))}catch(e){toast('讀不到這張照片')}};camIn.click()}
+function pickPhoto(cb,capture=true,max=720){capture?camIn.setAttribute('capture','environment'):camIn.removeAttribute('capture');camIn.value='';camIn.onchange=async()=>{const f=camIn.files[0];if(!f)return;try{cb(await shrink(f,max))}catch(e){toast('讀不到這張照片')}};camIn.click()}
 
 /* ---------- UI state + routing (#shelf, #plan, #settings, #book/<id>, #series/<key>) ---------- */
 const ui={tab:'shelf',q:'',status:'',fmt:'',genre:'',sort:'recent',view:db.view||'grid',online:null,bookId:null,series:null,scroll:0,inApp:false};
@@ -591,7 +595,7 @@ function viewShelf(){
 /* ---------- one book ---------- */
 function viewBook(b){
   const g=genreColor(genreOf(b)),key=b.series?seriesKey(b):'';
-  const rows=[['格式',fmtNames(b)],['類別',genreOf(b)],['放在哪',(b.formats||[]).includes('paper')?b.location:''],['買的日期',b.bought],['開始讀',b.started],['讀完',b.finished],['ISBN',b.isbn],
+  const rows=[['格式',fmtNames(b)],['類別',genreOf(b)],['放在哪',(b.formats||[]).includes('paper')?b.location:''],['買的日期',b.bought],['開始讀',b.started],['讀完',b.finished],['出版社',b.publisher],['ISBN',b.isbn],
     ['評分',b.rating?'★'.repeat(b.rating)+'☆'.repeat(5-b.rating):'']].filter(r=>r[1]);
   return`<header class="top bar-top"><button class="icon-btn" data-back aria-label="返回">${ICON.back}</button><button class="btn sm ghost" data-edit="${esc(b.id)}">編輯</button></header>
   <div class="hero" style="--c:${g}">${coverHtml(b,'xl')}
@@ -816,7 +820,7 @@ function editBook(id,preset={}){
   openSheet('book',id,`<div class="sheet-head"><h3>${id?'編輯':'加一本書'}</h3>${closeBtn}</div>
    ${id?'':`<div class="mode"><button type="button" aria-pressed="true">一本</button><button type="button" data-set aria-pressed="false">一整套</button><button type="button" data-bulk aria-pressed="false">貼上清單</button></div>
    <div class="field"><span>搜尋書名或 ISBN，自動帶入作者、封面</span><div class="search-row"><input name="q" placeholder="例如：被討厭的勇氣" enterkeyhint="search" value="${esc(preset.isbn||'')}"><button type="button" class="icon-btn solid" data-scan="sheet" aria-label="掃描條碼"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button><button type="button" class="btn ghost" data-search>搜尋</button></div><div class="hint">📱 iPhone 小技巧：點一下輸入框，選「掃描文字」，對準封面上的書名就能直接輸入。</div><div class="results"></div></div>`}
-   <div class="cvrow"><span id="cvPrev"></span><div><div class="small muted">封面</div><div class="btns" style="margin-top:6px"><button type="button" class="btn sm ghost" data-sphoto>${ICON.cam}拍封面</button><button type="button" class="btn sm danger" data-sunphoto hidden>移除照片</button></div><div class="hint" style="margin-top:6px">對準框框拍，會自動裁成封面，也會試著讀出書名。</div></div></div>
+   <div class="cvrow"><span id="cvPrev"></span><div><div class="small muted">封面</div><div class="btns" style="margin-top:6px"><button type="button" class="btn sm ghost" data-sphoto>${ICON.cam}拍封面</button><button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button><button type="button" class="btn sm danger" data-sunphoto hidden>移除照片</button></div><div class="hint" style="margin-top:6px">拍封面會自動裁成封面圖；拍版權頁會讀出書名、作者、出版社、ISBN。</div></div></div>
    <div class="ocrbox"></div>
    <label class="field"><span>書名</span><input name="title" value="${esc(b.title)}" required></label>
    <div class="dup" id="dup"></div>
@@ -828,7 +832,8 @@ function editBook(id,preset={}){
    <div class="grid2"><label class="field"><span>類別</span><select name="genre">${genreOptions(b,classify(b))}</select></label><label class="field"><span>放在哪（紙本）</span><input name="location" list="locL" value="${esc(b.location)}" placeholder="客廳書櫃第二層"></label></div>
    <datalist id="locL">${locList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
    <div class="grid2"><label class="field"><span>買的日期</span><input type="date" name="bought" value="${esc(b.bought)}"></label><label class="field"><span>讀完日期</span><input type="date" name="finished" value="${esc(b.finished)}"></label></div>
-   <div class="grid2"><label class="field"><span>ISBN</span><input name="isbn" inputmode="numeric" value="${esc(b.isbn)}"></label><div class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></div></div>
+   <div class="grid2"><label class="field"><span>ISBN</span><input name="isbn" inputmode="numeric" value="${esc(b.isbn)}"></label><label class="field"><span>出版社</span><input name="publisher" value="${esc(b.publisher||'')}"></label></div>
+   <div class="grid2"><div class="field"><span>評分</span><div class="rate">${[5,4,3,2,1].map(n=>`<input type="radio" name="rating" id="r${n}" value="${n}" ${+b.rating===n?'checked':''}><label for="r${n}" aria-label="${n} 星">★</label>`).join('')}</div></div></div>
    <fieldset class="loan"><legend>借給朋友</legend><div class="grid2"><label class="field"><span>借給誰</span><input name="loanTo" value="${esc(b.loan?.to||'')}"></label><label class="field"><span>哪一天</span><input type="date" name="loanDate" value="${esc(b.loan?.date||'')}"></label></div>${b.loan?'<button type="button" class="btn sm ghost" data-returned>已經還了</button>':''}</fieldset>
    <label class="field"><span>備註</span><textarea name="note" rows="2">${esc(b.note)}</textarea></label>
    <label class="field"><span>封面圖片網址</span><input name="cover" inputmode="url" value="${esc(b.cover)}"></label>
@@ -871,8 +876,10 @@ form.addEventListener('click',e=>{
   if('sphoto'in d)return shootCover(data=>{form._photo=data;updatePreview();if(!form.elements.title.value)readCover(data)});
   if('ocrshoot'in d)return shootCover(data=>{form._photo=data;updatePreview();readCover(data)});
   if(d.ocrtarget){form._ocrTarget=d.ocrtarget;return drawOcr()}
+  if('pageshoot'in d)return shootCover(data=>readPage(data),true);
   if(d.ocrline!==undefined){const l=form._ocrLines?.[+d.ocrline];if(!l)return;const f=form.elements,tg=form._ocrTarget||'title';
-    f[tg].value=tg==='author'?l.text.replace(AUTHOR_RE,'').trim():l.text;
+    const val=l.text.replace(/^(?:中文書名|書名|作者|著者|原著|出版者|出版社|出版)\s*[:：]?\s*/,'');
+    f[tg].value=tg==='author'?val.replace(AUTHOR_RE,'').trim():val;
     if(tg==='title'){form._ocrTarget='author';if(f.q){f.q.value=l.text;searchBooks()}}
     drawOcr();showDup();updateGenreHint();updatePreview();return}
   if('sunphoto'in d){form._photo=null;form._clear=true;return updatePreview()}
@@ -887,7 +894,7 @@ async function searchBooks(){
   if(looksIsbn(q)&&!form.elements.isbn.value)form.elements.isbn.value=isbn13(q);
   const e=encodeURIComponent(q);
   box.innerHTML=(r.length?r.map((v,i)=>`<button type="button" class="result" data-pick="${i}">${safeUrl(v.cover)?`<img src="${esc(safeUrl(v.cover))}" alt="">`:'<span class="noimg"></span>'}<span><b>${esc(v.title)}</b><br><span class="muted small">${esc(v.author)}</span></span></button>`).join('')
-    :`<div class="notfound"><span class="muted small">${r.failed?'連不上書籍資料庫（檢查一下網路）。':'線上找不到這本。'}拍封面，讓手機讀出書名和作者：</span><button type="button" class="btn sm" data-ocrshoot>${ICON.cam}拍封面認書名</button></div>`)
+    :`<div class="notfound"><span class="muted small">${r.failed?'連不上書籍資料庫（檢查一下網路）。':'線上找不到這本。'}拍封面或版權頁，讓手機讀出資料：</span><div class="btns" style="margin-top:0"><button type="button" class="btn sm" data-ocrshoot>${ICON.cam}拍封面認書名</button><button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button></div></div>`)
     +`<div class="small muted">到別處找：${[['博客來',`https://search.books.com.tw/search/query/key/${e}/cat/all`],['讀墨',`https://readmoo.com/search/keyword?q=${e}`],['Kobo',`https://www.kobo.com/tw/zh/search?query=${e}`],['Google',`https://www.google.com/search?tbm=bks&q=${e}`]].map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent);margin-left:8px">${l}</a>`).join('')}</div>`;
   showDup();updateGenreHint();
 }
@@ -911,7 +918,7 @@ form.addEventListener('submit',e=>{
   const formats=$$('input[name=fmt]:checked',form).map(x=>x.value);
   const loanTo=f.loanTo.value.trim();
   const rec={...(old||{}),id,title,author:f.author.value.trim(),series:f.series.value.trim(),vol:+f.vol.value||0,formats:formats.length?formats:['paper'],status,
-    bought:f.bought.value,finished,location:f.location.value.trim(),isbn:isbn13(f.isbn.value)||f.isbn.value.trim(),cover:f.cover.value.trim(),pages:+f.pages.value||0,
+    bought:f.bought.value,finished,location:f.location.value.trim(),isbn:isbn13(f.isbn.value)||f.isbn.value.trim(),publisher:f.publisher.value.trim(),cover:f.cover.value.trim(),pages:+f.pages.value||0,
     rating:+(form.querySelector('input[name=rating]:checked')?.value||0),note:f.note.value.trim(),hint:f.hint.value,genreAuto:!f.genre.value,
     loan:loanTo?{to:loanTo,date:f.loanDate.value||today()}:null,added:old?.added||Date.now()};
   if(status==='reading'&&!rec.started)rec.started=today();
@@ -1033,10 +1040,12 @@ async function cropCenter(dataUrl){
   c.getContext('2d').drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,c.width,c.height);
   return c.toDataURL('image/jpeg',.82);
 }
-function shootCover(cb){
-  const fallback=()=>pickPhoto(async d=>cb(await cropCenter(d)));
+function shootCover(cb,page=false){
+  const fallback=()=>page?pickPhoto(cb,true,1800):pickPhoto(async d=>cb(await cropCenter(d)));
   if(!navigator.mediaDevices?.getUserMedia)return fallback();
-  shootState={cb,stream:null,fallback};shootDlg.showModal();
+  shootState={cb,stream:null,fallback,page};
+  shootDlg.classList.toggle('page',page);$('.shoot-tip').textContent=page?'把版權頁（有書名、作者、ISBN 的那頁）放進框框':'把書的封面對準框框';
+  shootDlg.showModal();
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}},audio:false})
     .then(async st=>{if(!shootState){st.getTracks().forEach(t=>t.stop());return}shootState.stream=st;shootVideo.srcObject=st;await shootVideo.play()})
     .catch(e=>{closeShoot();if(e&&e.name==='NotAllowedError')toast('沒有相機權限，改用選照片');fallback()});
@@ -1051,12 +1060,12 @@ $('#shootBtn').addEventListener('click',()=>{
   const scale=Math.max(vr.width/v.videoWidth,vr.height/v.videoHeight);
   const offX=(vr.width-v.videoWidth*scale)/2,offY=(vr.height-v.videoHeight*scale)/2;
   const sx=Math.max(0,(r.left-vr.left-offX)/scale),sy=Math.max(0,(r.top-vr.top-offY)/scale),sw=Math.min(v.videoWidth-sx,r.width/scale),sh=Math.min(v.videoHeight-sy,r.height/scale);
-  const k=Math.min(1,960/sh),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  const k=Math.min(1,(shootState.page?1800:960)/sh),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
   c.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,c.width,c.height);
   const cb=shootState.cb;closeShoot();cb(c.toDataURL('image/jpeg',.82));
 });
 $('#shootCancel').addEventListener('click',closeShoot);
-$('#shootLib').addEventListener('click',()=>{const s=shootState;closeShoot();if(s)pickPhoto(async d=>s.cb(await cropCenter(d)),false)});
+$('#shootLib').addEventListener('click',()=>{const s=shootState;closeShoot();if(s)s.page?pickPhoto(s.cb,false,1800):pickPhoto(async d=>s.cb(await cropCenter(d)),false)});
 shootDlg.addEventListener('cancel',closeShoot);
 
 /* ---------- reading the title off the cover (on-device OCR, nothing is uploaded) ---------- */
@@ -1089,7 +1098,8 @@ async function readCover(dataUrl){
   let lines;
   try{lines=await ocrCover(dataUrl,status)}catch(e){if(form._ocr===myForm)box.innerHTML='<div class="hint">沒辦法辨識（可能是網路問題）。可以用「掃描文字」或直接打字。</div>';return}
   if(form._ocr!==myForm||!sheet.open)return;
-  if(!lines.length){box.innerHTML='<div class="hint">封面上讀不到字。可以換個角度再拍一次，或用「掃描文字」。</div>';return}
+  if(!lines.length){box.innerHTML='<div class="notfound"><span class="small muted">封面上讀不到字（藝術字、直排的書名常常讀不到）。封面照片已經留下來了，拍一下版權頁，就能讀出書名、作者和 ISBN：</span><button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button></div>';return}
+  form._ocrKind='cover';
   const f=form.elements,g=guessFromLines(lines);
   if(g.title&&!f.title.value)f.title.value=g.title;
   if(g.author&&!f.author.value)f.author.value=g.author;
@@ -1097,11 +1107,52 @@ async function readCover(dataUrl){
   drawOcr();showDup();updateGenreHint();updatePreview();
   if(g.title&&f.q){f.q.value=g.title;searchBooks()}
 }
+// 版權頁: "書名：…", "作者：…", "出版者：…", "ISBN 978-…"
+const PAGE_FIELDS=[['title',/^(?:中文書名|書名)/],['author',/^(?:作者|著者|原著|作繪者|作\/繪者|撰文|文字)/],['translator',/^(?:譯者|翻譯)/],['publisher',/^(?:出版者|出版社|出版|發行所)/]];
+const NEXT_LABEL=/\s*(?:譯者|作者|著者|出版者|出版社|發行人|總編輯|主編|責任編輯|封面設計|美術設計|內頁排版|定價|出版日期)\s*[:：].*$/;
+function validIsbn13(d){if(!/^97[89]\d{10}$/.test(d))return false;let s=0;for(let i=0;i<12;i++)s+=+d[i]*(i%2?3:1);return(10-s%10)%10===+d[12]}
+function parsePage(lines){
+  const out={};
+  for(const l of lines){const t=l.text;
+    for(const[k,re]of PAGE_FIELDS){const m=t.match(re);if(!m||out[k])continue;
+      const v=t.slice(m[0].length).replace(/^[\s:：|｜\/]+/,'').replace(NEXT_LABEL,'').replace(/[（(]?(?:著|譯|編著|繪)[)）]?$/,'').trim();
+      if(v&&v.length<=60)out[k]=v;break}}
+  // no "書名：" label: the title is usually the first / biggest unlabeled line above the author
+  if(!out.title){const ai=lines.findIndex(l=>PAGE_FIELDS[1][1].test(l.text));
+    const cand=lines.slice(0,ai>0?ai:Math.min(lines.length,4)).filter(l=>!/^[^:：]{1,5}[:：]/.test(l.text)&&!/\d{3,}|ISBN|版權|有限公司|出版/.test(l.text)&&l.text.length>=2);
+    const t=cand.sort((x,y)=>y.h-x.h||lines.indexOf(x)-lines.indexOf(y))[0];if(t)out.title=t.text}
+  const all=lines.map(l=>l.text).join(' ');
+  for(const c of all.match(/97[89][\d\-\s]{10,17}/g)||[]){const d=c.replace(/\D/g,'').slice(0,13);if(validIsbn13(d)){out.isbn=d;break}}
+  if(!out.isbn){const m=all.match(/ISBN[^\dX]{0,4}([\d\-\s]{9,13}[\dXx])/i);if(m&&isbn13(m[1]))out.isbn=isbn13(m[1])}
+  return out;
+}
+async function readPage(dataUrl){
+  const box=$('.ocrbox',form);if(!box)return;const my=form.dataset.id+'|p'+Date.now();form._ocr=my;
+  const status=t=>{if(form._ocr===my)box.innerHTML=`<div class="ocr-status"><span class="spin"></span>${esc(t.replace('封面','版權頁'))}</div>`};
+  status('準備讀取版權頁…');
+  let lines;
+  try{lines=await ocrCover(dataUrl,status)}catch(e){if(form._ocr===my)box.innerHTML='<div class="hint">沒辦法辨識（可能是網路問題），請直接輸入。</div>';return}
+  if(form._ocr!==my||!sheet.open)return;
+  const got=parsePage(lines),f=form.elements;
+  // the copyright page is more reliable than a guess from the cover, so it wins
+  if(got.title)f.title.value=got.title;
+  if(got.author)f.author.value=got.author;
+  if(got.publisher)f.publisher.value=got.publisher;
+  if(got.isbn)f.isbn.value=got.isbn;
+  if(got.translator&&!f.note.value.includes(got.translator))f.note.value=(f.note.value?f.note.value+'\n':'')+'譯者：'+got.translator;
+  form._ocrLines=lines;form._ocrKind='page';form._ocrTarget=got.title?(got.author?'publisher':'author'):'title';
+  const found=[['書名',got.title],['作者',got.author],['出版社',got.publisher],['ISBN',got.isbn]].filter(x=>x[1]);
+  form._ocrSummary=found.length?`從版權頁填入了${found.map(x=>x[0]).join('、')}`:'版權頁上沒找到「書名：」「作者：」這類欄位，可以點下面的字填入';
+  drawOcr();showDup();updateGenreHint();updatePreview();
+  const q=got.isbn||got.title;if(q&&f.q){f.q.value=q;searchBooks()}
+}
 function drawOcr(){
   const box=$('.ocrbox',form);if(!box||!form._ocrLines)return;const tg=form._ocrTarget;
-  box.innerHTML=`<div class="ocr"><div class="ocr-head"><span class="small muted">從封面讀到的字，點一下填入</span><div class="mini-seg"><button type="button" data-ocrtarget="title" aria-pressed="${tg==='title'}">書名</button><button type="button" data-ocrtarget="author" aria-pressed="${tg==='author'}">作者</button></div></div>
-    <div class="tagbox">${form._ocrLines.map((l,i)=>`<button type="button" class="tag sug" data-ocrline="${i}">${esc(l.text)}</button>`).join('')}</div>
-    <div class="hint" style="margin-top:6px">辨識不一定準，有錯字可以直接改。</div></div>`;
+  const page=form._ocrKind==='page';
+  box.innerHTML=`<div class="ocr">${page&&form._ocrSummary?`<div class="ocr-done">✓ ${esc(form._ocrSummary)}</div>`:''}<div class="ocr-head"><span class="small muted">從${page?'版權頁':'封面'}讀到的字，點一下填入</span><div class="mini-seg">${[['title','書名'],['author','作者'],['publisher','出版社']].map(([k,l])=>`<button type="button" data-ocrtarget="${k}" aria-pressed="${tg===k}">${l}</button>`).join('')}</div></div>
+    <div class="tagbox ocr-lines">${form._ocrLines.map((l,i)=>`<button type="button" class="tag sug" data-ocrline="${i}">${esc(l.text)}</button>`).join('')}</div>
+    <div class="hint" style="margin-top:6px">辨識不一定準，有錯字可以直接改。</div>
+    ${page?'':`<div class="ocr-more"><span class="small muted">封面讀不準？</span>${'<button type="button" class="btn sm ghost" data-pageshoot>📄 拍版權頁</button>'}</div>`}</div>`;
 }
 
 /* ---------- import / export / migrate ---------- */
@@ -1110,7 +1161,7 @@ function download(name,text,type){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
 }
 function exportCsv(){
-  const cols=[['書名','title'],['作者','author'],['系列','series'],['集數','vol'],['格式',b=>(b.formats||[]).map(f=>FORMATS[f]).join('、')],['狀態',b=>STATUS[b.status]],['類別',genreOf],['放在哪','location'],['買的日期','bought'],['讀完日期','finished'],['ISBN','isbn'],['評分','rating'],['借給',b=>b.loan?.to||''],['備註','note']];
+  const cols=[['書名','title'],['作者','author'],['系列','series'],['集數','vol'],['格式',b=>(b.formats||[]).map(f=>FORMATS[f]).join('、')],['狀態',b=>STATUS[b.status]],['類別',genreOf],['放在哪','location'],['買的日期','bought'],['讀完日期','finished'],['出版社','publisher'],['ISBN','isbn'],['評分','rating'],['借給',b=>b.loan?.to||''],['備註','note']];
   const cell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const rows=[cols.map(c=>c[0]),...db.books.map(b=>cols.map(([,k])=>typeof k==='function'?k(b):b[k]))].map(r=>r.map(cell).join(','));
   download(`我的書房-${today()}.csv`,'﻿'+rows.join('\n'),'text/csv');
@@ -1181,7 +1232,7 @@ function viewWelcome(){
     const how=(icon,title,steps,act,label)=>`<div class="how"><h3><span aria-hidden="true">${icon}</span>${title}</h3><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol>${act?`<button class="btn sm" data-wzdo="${act}">${label}</button>`:''}</div>`;
     body=`<h1>開始把書加進來</h1><p class="lead">設定好了！這幾種方法挑順手的用。這一頁之後可以在「設定 → 使用教學」再打開。</p>
     ${how('📷','紙本書：掃條碼',['按書房右上角的 ＋','按搜尋框旁的條碼按鈕，第一次會問相機權限，請按允許','對準書背 <b>978</b> 開頭的條碼，書名、作者、封面會自動帶入','選格式、狀態、放在哪，按儲存'],'scan','現在掃第一本')}
-    ${how('📸','拍封面',['查不到的書，按搜尋框旁的相機','把封面對準框框拍，會自動裁成這本書的封面','手機會試著讀出書名和作者，讀錯的話點一下其他文字或直接改','也可以用 iPhone 的「掃描文字」：點書名欄位，對準封面上的書名'],'')}
+    ${how('📸','拍封面',['查不到的書，按搜尋框旁的相機','把封面對準框框拍，會自動裁成這本書的封面','手機會試著讀出書名和作者，讀錯的話點一下其他文字或直接改','封面讀不到？按「拍版權頁」，拍書最前面或最後面寫著書名、作者、ISBN 的那頁，資料會自動填好','也可以用 iPhone 的「掃描文字」：點書名欄位，對準封面上的書名'],'')}
     ${how('📚','漫畫、套書：一次加一整套',['按 ＋ 後選「一整套」','填系列名稱和集數，例如鬼滅之刃第 1 到 23 集','填已經讀到第幾集，前面的會自動標成讀完','之後買新的一集，在書房的系列卡片按「＋」就好'],'set','加一整套')}
     ${ebooks.length?how('📱',`電子書（${ebooks.join('、')}）：貼上清單`,['用瀏覽器打開電子書網站的書櫃頁面，選取書名複製','回到這裡，按 ＋ 後選「貼上清單」','一行一本，可以寫「書名 / 作者」；不是書名的行先刪掉','選這批是哪個平台，按加入（重複的會自動跳過）'],'bulk','貼上清單'):''}
     ${how('🔍','在書店：我有這本嗎？',['打開書房，在最上面的搜尋框打書名，或按條碼按鈕掃一下','<span style="color:var(--warn)">橘色</span>：你已經有了','<span style="color:var(--accent)">綠色</span>：書房裡沒有，可以放心買'])}
